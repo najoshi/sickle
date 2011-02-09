@@ -12,13 +12,13 @@ LDFLAGS = -lz
 default: build
 
 trim_single.o: src/trim_single.c src/sickle.h src/kseq.h
-	$(CC) $(CFLAGS) -c $?
+	$(CC) $(CFLAGS) $(OPT) -c $?
 
 trim_paired.o: src/trim_paired.c src/sickle.h src/kseq.h
-	$(CC) $(CFLAGS) -c $?
+	$(CC) $(CFLAGS) $(OPT) -c $?
 
 sickle.o: src/sickle.c src/sickle.h
-	$(CC) $(CFLAGS) -c $?
+	$(CC) $(CFLAGS) $(OPT) -c $?
 
 clean:
 	rm -rf *.o ./sickle
