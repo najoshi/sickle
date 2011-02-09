@@ -8,6 +8,17 @@
 #include <string.h>
 #include "sickle.h"
 
+int get_quality_num (char qualchar, int qualtype) {
+  /* 
+     Return the adjusted quality, depending on quality type.
+
+     Note that this uses the array in sickle.h, which *approximates*
+     the SOLEXA (pre-1.6 pipeline) qualities as linear. This is
+     inaccurate with low-quality bases.
+  */
+  return((int) qualchar - quality_contants[qualtype][Q_OFFSET]);
+}
+
 void main_usage (int status) {
 
 	fprintf (stdout, "\nUsage: %s <command> [options]\n\

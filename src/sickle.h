@@ -2,8 +2,6 @@
 #define SICKLE_H
 
 #include <limits.h>
-int single_main(int, char**);
-int paired_main(int, char**);
 
 #ifndef PROGRAM_NAME
 #define PROGRAM_NAME "sickle"
@@ -16,8 +14,6 @@ int paired_main(int, char**);
 #ifndef VERSION
 #define VERSION 0.0
 #endif
-
-enum {ILLUMINA_TYPE, PHRED_TYPE, SANGER_TYPE};
 
 /* Options drawn from GNU's coreutils/src/system.h */
 /* These options are defined so as to avoid conflicting with option
@@ -44,6 +40,30 @@ Program_name, Version, Program_name, Authors); \
 exit(EXIT_SUCCESS); \
 break;
 /* end code drawn from system.h */
+
+typedef enum {
+  PHRED,
+  SANGER,
+  SOLEXA,
+  ILLUMINA
+} quality_type;
+
+#define Q_OFFSET 0
+#define Q_MIN 1
+#define Q_MAX 2
+
+static const int quality_contants[4][3] = {
+  /* offset, min, max */
+  {0, 4, 60}, /* PHRED */
+  {33, 0, 93}, /* SANGER */
+  {64, -5, 62}, /* SOLEXA; this is an approx; the transform is non-linear */
+  {64, 0, 62} /* ILLUMINA */
+};
+
+/* Function Prototypes */
+int get_quality_num(char qualchar, int qualtype);
+int single_main(int argc, char *argv[]);
+int paired_main(int argc, char *argv[]);
 
 
 #endif /*SICKLE_H*/

@@ -3,8 +3,9 @@
 #include <stdlib.h>
 #include <zlib.h>
 #include <stdio.h>
-#include "kseq.h"
 #include <getopt.h>
+
+#include "kseq.h"
 #include "sickle.h"
 
 KSEQ_INIT(gzFile, gzread)
@@ -13,39 +14,31 @@ int single_qual_threshold = 20;
 int single_length_threshold = 20;
 
 static struct option single_long_options[] = {
-	{"fastq-file", required_argument, 0, 'f'},
-	{"output-file", required_argument, 0, 'o'},
-	{"qual-type", required_argument, 0, 't'},
-	{"qual-threshold", optional_argument, 0, 'q'},
-	{"length-threshold", optional_argument, 0, 'l'},
-	{GETOPT_HELP_OPTION_DECL},
-	{GETOPT_VERSION_OPTION_DECL},
-	{NULL, 0, NULL, 0}
+  {"fastq-file", required_argument, 0, 'f'},
+  {"output-file", required_argument, 0, 'o'},
+  {"qual-type", required_argument, 0, 't'},
+  {"qual-threshold", optional_argument, 0, 'q'},
+  {"length-threshold", optional_argument, 0, 'l'},
+  {GETOPT_HELP_OPTION_DECL},
+  {GETOPT_VERSION_OPTION_DECL},
+  {NULL, 0, NULL, 0}
 };
 
 void single_usage (int status) {
-
-	fprintf (stderr, "\nUsage: %s se -f <fastq sequence file> -t <quality type> -o <trimmed fastq file>\n\
+  
+  fprintf (stderr, "\nUsage: %s se -f <fastq sequence file> -t <quality type> -o <trimmed fastq file>\n\
 \n\
 Options:\n\
 -f, --fastq-file, Input fastq file (required)\n\
 -t, --qual-type, Type of quality values (illumina, phred, sanger) (required)\n", PROGRAM_NAME);
 
-	fprintf (stderr, "-o, --output-file, Output trimmed fastq file (required)\n\
+  fprintf (stderr, "-o, --output-file, Output trimmed fastq file (required)\n\
 -q, --qual-threshold, Threshold for trimming based on average quality in a window. Default 20.\n\
 -l, --length-threshold, Threshold to keep a read based on length after trimming. Default 20.\n\
 --help, display this help and exit\n\
 --version, output version information and exit\n\n");
 
-	exit (status);
-}
-
-int single_get_quality_num (char qualchar, int qualtype) {
-	if (qualtype == ILLUMINA_TYPE) return ((int) qualchar - 64);
-	else if (qualtype == PHRED_TYPE) return ((int) qualchar);
-	else if (qualtype == SANGER_TYPE) return ((int) qualchar - 33);
-
-	return 0;
+  exit (status);
 }
 
 int single_main (int argc, char *argv[]) {
@@ -77,9 +70,10 @@ int single_main (int argc, char *argv[]) {
 				break;
 
 			case 't':
-				if (!strcmp (optarg, "illumina")) qualtype = ILLUMINA_TYPE;
-				else if (!strcmp (optarg, "phred")) qualtype = PHRED_TYPE;
-				else if (!strcmp (optarg, "sanger")) qualtype = SANGER_TYPE;
+				if (!strcmp (optarg, "illumina")) qualtype = ILLUMINA;
+				else if (!strcmp (optarg, "phred")) qualtype = PHRED;
+				else if (!strcmp (optarg, "solexa")) qualtype = SOLEXA;
+				else if (!strcmp (optarg, "sanger")) qualtype = SANGER;
 				else {
 					fprintf (stderr, "Error: Quality type '%s' is not a valid type.\n", optarg);
 					return EXIT_FAILURE;
@@ -149,7 +143,7 @@ int single_main (int argc, char *argv[]) {
 		if (window_size == 0) window_size = fqrec->seq.l;
 
 		for (i=0; i<window_size; i++) {
-			window_total += single_get_quality_num (fqrec->qual.s[i], qualtype);
+			window_total += get_quality_num (fqrec->qual.s[i], qualtype);
 		}
 if (debug) printf ("window total: %d, window_size: %d\n", window_total, window_size);
 
@@ -164,7 +158,7 @@ if (debug) printf ("window total / window size: %f\n", (double)window_total / (d
 
 				/* at what point in the window does the quality dip below the threshold? */
 				for (j=window_start; j<window_start+window_size; j++) {
-					if (single_get_quality_num (fqrec->qual.s[j], qualtype) < single_qual_threshold) {
+					if (get_quality_num (fqrec->qual.s[j], qualtype) < single_qual_threshold) {
 						p1cut = j;
 						if (p1cut < single_length_threshold) {p1flag = 0;}
 						break;
@@ -175,8 +169,8 @@ if (debug) printf ("window total / window size: %f\n", (double)window_total / (d
 			}
 
 			/* instead of sliding the window, subtract the first qual and add the next qual */
-			window_total -= single_get_quality_num (fqrec->qual.s[window_start], qualtype);
-			window_total += single_get_quality_num (fqrec->qual.s[window_start+window_size], qualtype);
+			window_total -= get_quality_num (fqrec->qual.s[window_start], qualtype);
+			window_total += get_quality_num (fqrec->qual.s[window_start+window_size], qualtype);
 			window_start++;
 
 if (debug) printf ("window total: %d\n", window_total);

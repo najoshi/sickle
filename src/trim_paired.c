@@ -46,14 +46,6 @@ Options:\n\
 	exit (status);
 }
 
-int paired_get_quality_num (char qualchar, int qualtype) {
-	if (qualtype == ILLUMINA_TYPE) return ((int) qualchar - 64);
-	else if (qualtype == PHRED_TYPE) return ((int) qualchar);
-	else if (qualtype == SANGER_TYPE) return ((int) qualchar - 33);
-
-	return 0;
-}
-
 int paired_main (int argc, char *argv[]) {
 
 	gzFile pe1=NULL;
@@ -96,9 +88,10 @@ int paired_main (int argc, char *argv[]) {
 				break;
 
 			case 't':
-				if (!strcmp (optarg, "illumina")) qualtype = ILLUMINA_TYPE;
-				else if (!strcmp (optarg, "phred")) qualtype = PHRED_TYPE;
-				else if (!strcmp (optarg, "sanger")) qualtype = SANGER_TYPE;
+				if (!strcmp (optarg, "illumina")) qualtype = ILLUMINA;
+				else if (!strcmp (optarg, "phred")) qualtype = PHRED;
+				else if (!strcmp (optarg, "solexa")) qualtype = SOLEXA;
+				else if (!strcmp (optarg, "sanger")) qualtype = SANGER;
 				else {
 					fprintf (stderr, "Error: Quality type '%s' is not a valid type.\n", optarg);
 					return EXIT_FAILURE;
@@ -190,13 +183,13 @@ int paired_main (int argc, char *argv[]) {
 		if (window_size == 0) window_size = fqrec1->seq.l;
 
 		for (i=0; i<window_size; i++) {
-			window_total += paired_get_quality_num (fqrec1->qual.s[i], qualtype);
+			window_total += get_quality_num (fqrec1->qual.s[i], qualtype);
 		}
-if (debug) printf ("window total: %d, window_size: %d\n", window_total, window_size);
+    if (debug) printf ("window total: %d, window_size: %d\n", window_total, window_size);
 
 		for (i=0; i<fqrec1->qual.l; i++) {
 
-if (debug) printf ("window total / window size: %f\n", (double)window_total / (double)window_size); 
+      if (debug) printf ("window total / window size: %f\n", (double)window_total / (double)window_size); 
 
 			/* if the average quality in the window is less than the threshold */
 			/* or if the window is the last window in the read */
@@ -205,7 +198,7 @@ if (debug) printf ("window total / window size: %f\n", (double)window_total / (d
 
 				/* at what point in the window does the quality dip below the threshold? */
 				for (j=window_start; j<window_start+window_size; j++) {
-					if (paired_get_quality_num (fqrec1->qual.s[j], qualtype) < paired_qual_threshold) {
+					if (get_quality_num (fqrec1->qual.s[j], qualtype) < paired_qual_threshold) {
 						p1cut = j;
 						if (p1cut < paired_length_threshold) {p1flag = 0;}
 						break;
@@ -216,11 +209,11 @@ if (debug) printf ("window total / window size: %f\n", (double)window_total / (d
 			}
 
 			/* instead of sliding the window, subtract the first qual and add the next qual */
-			window_total -= paired_get_quality_num (fqrec1->qual.s[window_start], qualtype);
-			window_total += paired_get_quality_num (fqrec1->qual.s[window_start+window_size], qualtype);
+			window_total -= get_quality_num (fqrec1->qual.s[window_start], qualtype);
+			window_total += get_quality_num (fqrec1->qual.s[window_start+window_size], qualtype);
 			window_start++;
 
-if (debug) printf ("window total: %d\n", window_total);
+      if (debug) printf ("window total: %d\n", window_total);
 		}
 
 
@@ -235,13 +228,13 @@ if (debug) printf ("window total: %d\n", window_total);
 		if (window_size == 0) window_size = fqrec2->seq.l;
 
 		for (i=0; i<window_size; i++) {
-			window_total += paired_get_quality_num (fqrec2->qual.s[i], qualtype);
+			window_total += get_quality_num (fqrec2->qual.s[i], qualtype);
 		}
-if (debug) printf ("window total: %d, window_size: %d\n", window_total, window_size);
+    if (debug) printf ("window total: %d, window_size: %d\n", window_total, window_size);
 
 		for (i=0; i<fqrec2->qual.l; i++) {
 
-if (debug) printf ("window total / window size: %f\n", (double)window_total / (double)window_size); 
+      if (debug) printf ("window total / window size: %f\n", (double)window_total / (double)window_size); 
 
 			/* if the average quality in the window is less than the threshold */
 			/* or if the window is the last window in the read */
@@ -250,7 +243,7 @@ if (debug) printf ("window total / window size: %f\n", (double)window_total / (d
 
 				/* at what point in the window does the quality dip below the threshold? */
 				for (j=window_start; j<window_start+window_size; j++) {
-					if (paired_get_quality_num (fqrec2->qual.s[j], qualtype) < paired_qual_threshold) {
+					if (get_quality_num (fqrec2->qual.s[j], qualtype) < paired_qual_threshold) {
 						p2cut = j;
 						if (p2cut < paired_length_threshold) {p2flag = 0;}
 						break;
@@ -261,11 +254,11 @@ if (debug) printf ("window total / window size: %f\n", (double)window_total / (d
 			}
 
 			/* instead of sliding the window, subtract the first qual and add the next qual */
-			window_total -= paired_get_quality_num (fqrec2->qual.s[window_start], qualtype);
-			window_total += paired_get_quality_num (fqrec2->qual.s[window_start+window_size], qualtype);
+			window_total -= get_quality_num (fqrec2->qual.s[window_start], qualtype);
+			window_total += get_quality_num (fqrec2->qual.s[window_start+window_size], qualtype);
 			window_start++;
 
-if (debug) printf ("window total: %d\n", window_total);
+      if (debug) printf ("window total: %d\n", window_total);
 		}
 
 		if (p1flag == 1 && p2flag == 1) {
@@ -309,5 +302,5 @@ if (debug) printf ("window total: %d\n", window_total);
 	fclose (outfile1);
 	fclose (outfile2);
 	fclose (single);
-	return 0;
+	return EXIT_SUCCESS;
 }
