@@ -21,7 +21,7 @@ sickle.o: src/sickle.c src/sickle.h
 	$(CC) $(CFLAGS) $(OPT) -c $?
 
 clean:
-	rm -rf *.o ./sickle
+	rm -rf *.o src/*.gch ./sickle
 
 distclean: clean
 	rm -rf *.tar.gz
