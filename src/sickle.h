@@ -5,7 +5,23 @@
 #include <zlib.h>
 #include "kseq.h"
 
-KSEQ_INIT(gzFile, gzread)
+
+/* KSEQ_INIT() cannot be called here, because we only need the types
+   defined. Calling KSEQ_INIT() would also define functions, leading
+   to an unused function warning with GCC. So, the basic typedefs
+   kseq.h has are included here, and each file that reads needs:
+
+   __KS_GETC(gzread, BUFFER_SIZE)
+   __KS_GETUNTIL(gzread, BUFFER_SIZE)
+   __KSEQ_READ
+
+*/
+
+#define BUFFER_SIZE 4096
+__KS_TYPE(gzFile)
+__KS_BASIC(gzFile, BUFFER_SIZE)
+__KSEQ_TYPE(gzFile)
+__KSEQ_BASIC(gzFile)
 
 #ifndef PROGRAM_NAME
 #define PROGRAM_NAME "sickle"
