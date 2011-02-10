@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <zlib.h>
 #include <stdio.h>
-#include "kseq.h"
 #include <getopt.h>
 #include "sickle.h"
 

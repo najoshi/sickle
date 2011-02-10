@@ -4,7 +4,6 @@
 #include <zlib.h>
 #include <stdio.h>
 #include <getopt.h>
-#include "kseq.h"
 #include "sickle.h"
 
 int get_quality_num (char qualchar, int qualtype) {
