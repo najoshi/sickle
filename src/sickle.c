@@ -8,6 +8,9 @@
 #include <string.h>
 #include "sickle.h"
 
+int single_main (int argc, char *argv[]);
+int paired_main (int argc, char *argv[]);
+
 void main_usage (int status) {
 
 	fprintf (stdout, "\nUsage: %s <command> [options]\n\

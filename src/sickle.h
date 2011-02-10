@@ -3,9 +3,6 @@
 
 #include <limits.h>
 #include <zlib.h>
-#include "kseq.h"
-
-KSEQ_INIT(gzFile, gzread)
 
 #ifndef PROGRAM_NAME
 #define PROGRAM_NAME "sickle"
@@ -63,12 +60,5 @@ static const int quality_constants[4][3] = {
   {64, -5, 62}, /* SOLEXA; this is an approx; the transform is non-linear */
   {64, 0, 62} /* ILLUMINA */
 };
-
-/* Function Prototypes */
-int get_quality_num (char qualchar, int qualtype);
-int sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int qual_threshold);
-int single_main (int argc, char *argv[]);
-int paired_main (int argc, char *argv[]);
-
 
 #endif /*SICKLE_H*/

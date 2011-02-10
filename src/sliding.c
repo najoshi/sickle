@@ -7,6 +7,8 @@
 #include "kseq.h"
 #include "sickle.h"
 
+KSEQ_INIT(gzFile, gzread)
+
 int get_quality_num (char qualchar, int qualtype) {
   /* 
      Return the adjusted quality, depending on quality type.
