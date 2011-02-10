@@ -4,11 +4,8 @@
 #include <zlib.h>
 #include <stdio.h>
 #include <getopt.h>
-
 #include "kseq.h"
 #include "sickle.h"
-
-KSEQ_INIT(gzFile, gzread)
 
 int single_qual_threshold = 20;
 int single_length_threshold = 20;
@@ -51,6 +48,7 @@ int single_main (int argc, char *argv[]) {
 	int optc;
 	extern char *optarg;
 	int qualtype=-1;
+	int p1cut;
 
 	while (1) {
 		int option_index = 0;
@@ -131,61 +129,14 @@ int single_main (int argc, char *argv[]) {
 
 	while ((l = kseq_read (fqrec)) >= 0) {
 
-		int window_size = (int) (0.1 * fqrec->seq.l);
-		int i,j;
-		int window_start=0;
-		int window_total=0;
-		int p1flag=1;
-		int p1cut = fqrec->seq.l;
+		p1cut = sliding_window (fqrec, qualtype, single_length_threshold, single_qual_threshold);
 
-		/* if the seq length is less then 10bp, */
-		/* then make the window size the length of the seq */
-		if (window_size == 0) window_size = fqrec->seq.l;
-
-		for (i=0; i<window_size; i++) {
-			window_total += get_quality_num (fqrec->qual.s[i], qualtype);
-		}
-if (debug) printf ("window total: %d, window_size: %d\n", window_total, window_size);
-
-		for (i=0; i<fqrec->qual.l; i++) {
-
-if (debug) printf ("window total / window size: %f\n", (double)window_total / (double)window_size); 
-
-			/* if the average quality in the window is less than the threshold */
-			/* or if the window is the last window in the read */
-			if (((double)window_total / (double)window_size < single_qual_threshold) || 
-				(window_start+window_size > fqrec->qual.l)) {
-
-				/* at what point in the window does the quality dip below the threshold? */
-				for (j=window_start; j<window_start+window_size; j++) {
-					if (get_quality_num (fqrec->qual.s[j], qualtype) < single_qual_threshold) {
-						p1cut = j;
-						if (p1cut < single_length_threshold) {p1flag = 0;}
-						break;
-					}
-				}
-
-				break;
-			}
-
-			/* instead of sliding the window, subtract the first qual and add the next qual */
-			window_total -= get_quality_num (fqrec->qual.s[window_start], qualtype);
-			window_total += get_quality_num (fqrec->qual.s[window_start+window_size], qualtype);
-			window_start++;
-
-if (debug) printf ("window total: %d\n", window_total);
-		}
-
-
-		if (p1flag == 1) {
+		if (p1cut >= 0) {
 			fprintf (outfile, "@%s\n", fqrec->name.s);
 			fprintf (outfile, "%.*s\n", p1cut, fqrec->seq.s);
 			fprintf (outfile, "+%s\n", fqrec->name.s);
 			fprintf (outfile, "%.*s\n", p1cut, fqrec->qual.s);
 		}
-
-if (debug) printf ("trimseq : %.*s\n", p1cut, fqrec->seq.s);
-if (debug) printf ("trimqual: %.*s\n", p1cut, fqrec->qual.s);
 	}
 
 	kseq_destroy (fqrec);

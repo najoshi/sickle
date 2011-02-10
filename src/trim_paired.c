@@ -7,8 +7,6 @@
 #include <getopt.h>
 #include "sickle.h"
 
-KSEQ_INIT(gzFile, gzread)
-
 int paired_qual_threshold = 20;
 int paired_length_threshold = 20;
 
@@ -60,7 +58,7 @@ int paired_main (int argc, char *argv[]) {
 	int optc;
 	extern char *optarg;
 	int qualtype=-1;
-	int window_size,i,j,window_start,window_total,p1flag,p2flag,p1cut,p2cut;
+	int p1cut,p2cut;
 
 	while (1) {
 		int option_index = 0;
@@ -172,96 +170,10 @@ int paired_main (int argc, char *argv[]) {
 			break;
 		}
 
-		window_size = (int) (0.1 * fqrec1->seq.l);
-		window_start=0;
-		window_total=0;
-		p1flag=1;
-		p1cut = fqrec1->seq.l;
+		p1cut = sliding_window (fqrec1, qualtype, paired_length_threshold, paired_qual_threshold);
+		p2cut = sliding_window (fqrec2, qualtype, paired_length_threshold, paired_qual_threshold);
 
-		/* if the seq length is less then 10bp, */
-		/* then make the window size the length of the seq */
-		if (window_size == 0) window_size = fqrec1->seq.l;
-
-		for (i=0; i<window_size; i++) {
-			window_total += get_quality_num (fqrec1->qual.s[i], qualtype);
-		}
-    if (debug) printf ("window total: %d, window_size: %d\n", window_total, window_size);
-
-		for (i=0; i<fqrec1->qual.l; i++) {
-
-      if (debug) printf ("window total / window size: %f\n", (double)window_total / (double)window_size); 
-
-			/* if the average quality in the window is less than the threshold */
-			/* or if the window is the last window in the read */
-			if (((double)window_total / (double)window_size < paired_qual_threshold) || 
-				(window_start+window_size > fqrec1->qual.l)) {
-
-				/* at what point in the window does the quality dip below the threshold? */
-				for (j=window_start; j<window_start+window_size; j++) {
-					if (get_quality_num (fqrec1->qual.s[j], qualtype) < paired_qual_threshold) {
-						p1cut = j;
-						if (p1cut < paired_length_threshold) {p1flag = 0;}
-						break;
-					}
-				}
-
-				break;
-			}
-
-			/* instead of sliding the window, subtract the first qual and add the next qual */
-			window_total -= get_quality_num (fqrec1->qual.s[window_start], qualtype);
-			window_total += get_quality_num (fqrec1->qual.s[window_start+window_size], qualtype);
-			window_start++;
-
-      if (debug) printf ("window total: %d\n", window_total);
-		}
-
-
-		window_size = (int) (0.1 * fqrec2->seq.l);
-		window_start=0;
-		window_total=0;
-		p2flag=1;
-		p2cut = fqrec2->seq.l;
-
-		/* if the seq length is less then 10bp, */
-		/* then make the window size the length of the seq */
-		if (window_size == 0) window_size = fqrec2->seq.l;
-
-		for (i=0; i<window_size; i++) {
-			window_total += get_quality_num (fqrec2->qual.s[i], qualtype);
-		}
-    if (debug) printf ("window total: %d, window_size: %d\n", window_total, window_size);
-
-		for (i=0; i<fqrec2->qual.l; i++) {
-
-      if (debug) printf ("window total / window size: %f\n", (double)window_total / (double)window_size); 
-
-			/* if the average quality in the window is less than the threshold */
-			/* or if the window is the last window in the read */
-			if (((double)window_total / (double)window_size < paired_qual_threshold) || 
-				(window_start+window_size > fqrec2->qual.l)) {
-
-				/* at what point in the window does the quality dip below the threshold? */
-				for (j=window_start; j<window_start+window_size; j++) {
-					if (get_quality_num (fqrec2->qual.s[j], qualtype) < paired_qual_threshold) {
-						p2cut = j;
-						if (p2cut < paired_length_threshold) {p2flag = 0;}
-						break;
-					}
-				}
-
-				break;
-			}
-
-			/* instead of sliding the window, subtract the first qual and add the next qual */
-			window_total -= get_quality_num (fqrec2->qual.s[window_start], qualtype);
-			window_total += get_quality_num (fqrec2->qual.s[window_start+window_size], qualtype);
-			window_start++;
-
-      if (debug) printf ("window total: %d\n", window_total);
-		}
-
-		if (p1flag == 1 && p2flag == 1) {
+		if (p1cut >= 0 && p2cut >= 0) {
 			fprintf (outfile1, "@%s\n", fqrec1->name.s);
 			fprintf (outfile1, "%.*s\n", p1cut, fqrec1->seq.s);
 			fprintf (outfile1, "+%s\n", fqrec1->name.s);
@@ -273,14 +185,14 @@ int paired_main (int argc, char *argv[]) {
 			fprintf (outfile2, "%.*s\n", p2cut, fqrec2->qual.s);
 		}
 
-		else if (p1flag == 1 && p2flag == 0) {
+		else if (p1cut >= 0 && p2cut < 0) {
 			fprintf (single, "@%s\n", fqrec1->name.s);
 			fprintf (single, "%.*s\n", p1cut, fqrec1->seq.s);
 			fprintf (single, "+%s\n", fqrec1->name.s);
 			fprintf (single, "%.*s\n", p1cut, fqrec1->qual.s);
 		}
 
-		else if (p1flag == 0 && p2flag == 1) {
+		else if (p1cut < 0 && p2cut >= 0) {
 			fprintf (single, "@%s\n", fqrec2->name.s);
 			fprintf (single, "%.*s\n", p2cut, fqrec2->seq.s);
 			fprintf (single, "+%s\n", fqrec2->name.s);

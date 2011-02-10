@@ -11,6 +11,9 @@ LDFLAGS = -lz
 
 default: build
 
+sliding.o: src/sliding.c src/kseq.h src/sickle.h
+	$(CC) $(CFLAGS) $(OPT) -c $?
+
 trim_single.o: src/trim_single.c src/sickle.h src/kseq.h
 	$(CC) $(CFLAGS) $(OPT) -c $?
 
@@ -29,7 +32,7 @@ distclean: clean
 dist:
 	tar -zcf $(ARCHIVE).tar.gz src Makefile
 
-build: trim_single.o trim_paired.o sickle.o
+build: sliding.o trim_single.o trim_paired.o sickle.o
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OPT) $? -o sickle
 
 debug:

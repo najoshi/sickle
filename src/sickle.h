@@ -2,6 +2,10 @@
 #define SICKLE_H
 
 #include <limits.h>
+#include <zlib.h>
+#include "kseq.h"
+
+KSEQ_INIT(gzFile, gzread)
 
 #ifndef PROGRAM_NAME
 #define PROGRAM_NAME "sickle"
@@ -52,7 +56,7 @@ typedef enum {
 #define Q_MIN 1
 #define Q_MAX 2
 
-static const int quality_contants[4][3] = {
+static const int quality_constants[4][3] = {
   /* offset, min, max */
   {0, 4, 60}, /* PHRED */
   {33, 0, 93}, /* SANGER */
@@ -61,9 +65,10 @@ static const int quality_contants[4][3] = {
 };
 
 /* Function Prototypes */
-int get_quality_num(char qualchar, int qualtype);
-int single_main(int argc, char *argv[]);
-int paired_main(int argc, char *argv[]);
+int get_quality_num (char qualchar, int qualtype);
+int sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int qual_threshold);
+int single_main (int argc, char *argv[]);
+int paired_main (int argc, char *argv[]);
 
 
 #endif /*SICKLE_H*/
