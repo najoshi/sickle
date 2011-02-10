@@ -7,7 +7,7 @@
 #include "kseq.h"
 #include "sickle.h"
 
-KSEQ_INIT(gzFile, gzread)
+/*KSEQ_INIT(gzFile, gzread)*/
 
 int get_quality_num (char qualchar, int qualtype) {
   /* 

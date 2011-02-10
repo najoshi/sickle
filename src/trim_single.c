@@ -7,7 +7,7 @@
 #include "kseq.h"
 #include "sickle.h"
 
-KSEQ_INIT(gzFile, gzread)
+/*KSEQ_INIT(gzFile, gzread)*/
 
 int sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int qual_threshold);
 

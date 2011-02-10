@@ -3,6 +3,9 @@
 
 #include <limits.h>
 #include <zlib.h>
+#include "kseq.h"
+
+KSEQ_INIT(gzFile, gzread)
 
 #ifndef PROGRAM_NAME
 #define PROGRAM_NAME "sickle"
