@@ -209,6 +209,7 @@ int paired_main (int argc, char *argv[]) {
 		p1cut = sliding_window (fqrec1, qualtype, paired_length_threshold, paired_qual_threshold);
 		p2cut = sliding_window (fqrec2, qualtype, paired_length_threshold, paired_qual_threshold);
 
+		/* if both sequences passed quality and length filters, then output both records */
 		if (p1cut >= 0 && p2cut >= 0) {
 			fprintf (outfile1, "@%s\n", fqrec1->name.s);
 			fprintf (outfile1, "%.*s\n", p1cut, fqrec1->seq.s);
@@ -223,6 +224,7 @@ int paired_main (int argc, char *argv[]) {
 			kept_p += 2;
 		}
 
+		/* if only one sequence passed filter, then put its record in singles and discard the other */
 		else if (p1cut >= 0 && p2cut < 0) {
 			fprintf (single, "@%s\n", fqrec1->name.s);
 			fprintf (single, "%.*s\n", p1cut, fqrec1->seq.s);
