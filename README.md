@@ -19,7 +19,7 @@ window the drop occurs and cuts both the read and quality strings there.
 However, if the cut point is less than the minimum length threshold, then
 the read is discarded entirely. 
 
-sickle supports four types of quality values: illumina, solexa, phred, and sanger.
+Sickle supports four types of quality values: illumina, solexa, phred, and sanger.
 
 ## Requirements 
 
