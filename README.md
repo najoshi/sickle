@@ -20,6 +20,7 @@ However, if the cut point is less than the minimum length threshold, then
 the read is discarded entirely. 
 
 Sickle supports four types of quality values: illumina, solexa, phred, and sanger.
+
 Sickle also supports gzipped file inputs.
 
 ## Requirements 
