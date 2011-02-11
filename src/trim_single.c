@@ -7,7 +7,6 @@
 #include "sickle.h"
 #include "kseq.h"
 
-
 __KS_GETC(gzread, BUFFER_SIZE)
 __KS_GETUNTIL(gzread, BUFFER_SIZE)
 __KSEQ_READ
