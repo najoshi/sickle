@@ -54,6 +54,8 @@ int single_main (int argc, char *argv[]) {
 	int qualtype=-1;
 	int p1cut;
 	char *outfn=NULL;
+	int kept=0;
+	int discard=0;
 
 	while (1) {
 		int option_index = 0;
@@ -144,8 +146,13 @@ int single_main (int argc, char *argv[]) {
 			fprintf (outfile, "%.*s\n", p1cut, fqrec->seq.s);
 			fprintf (outfile, "+%s\n", fqrec->name.s);
 			fprintf (outfile, "%.*s\n", p1cut, fqrec->qual.s);
+			kept++;
 		}
+
+		else discard++;
 	}
+
+	fprintf (stderr, "\nFastQ records kept: %d\nFastQ records discarded: %d\n\n", kept, discard);
 
 	kseq_destroy (fqrec);
 	gzclose (se);

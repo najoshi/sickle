@@ -66,6 +66,9 @@ int paired_main (int argc, char *argv[]) {
 	char *outfn1=NULL;
 	char *outfn2=NULL;
 	char *sfn=NULL;
+	int kept_p=0;
+	int kept_s=0;
+	int discard=0;
 
 	while (1) {
 		int option_index = 0;
@@ -199,6 +202,8 @@ int paired_main (int argc, char *argv[]) {
 			fprintf (outfile2, "%.*s\n", p2cut, fqrec2->seq.s);
 			fprintf (outfile2, "+%s\n", fqrec2->name.s);
 			fprintf (outfile2, "%.*s\n", p2cut, fqrec2->qual.s);
+
+			kept_p += 2;
 		}
 
 		else if (p1cut >= 0 && p2cut < 0) {
@@ -206,6 +211,9 @@ int paired_main (int argc, char *argv[]) {
 			fprintf (single, "%.*s\n", p1cut, fqrec1->seq.s);
 			fprintf (single, "+%s\n", fqrec1->name.s);
 			fprintf (single, "%.*s\n", p1cut, fqrec1->qual.s);
+
+			kept_s++;
+			discard++;
 		}
 
 		else if (p1cut < 0 && p2cut >= 0) {
@@ -213,7 +221,12 @@ int paired_main (int argc, char *argv[]) {
 			fprintf (single, "%.*s\n", p2cut, fqrec2->seq.s);
 			fprintf (single, "+%s\n", fqrec2->name.s);
 			fprintf (single, "%.*s\n", p2cut, fqrec2->qual.s);
+
+			kept_s++;
+			discard++;
 		}
+
+		else discard += 2;
 	}
 
 	if (l1 < 0) {
@@ -222,6 +235,8 @@ int paired_main (int argc, char *argv[]) {
 			fprintf (stderr, "Error: PE file 1 is shorter than PE file 2. Disregarding rest of PE file 2.\n");
 		}
 	}
+
+	fprintf (stderr, "\nFastQ paired records kept: %d (%d pairs)\nFastQ single records kept: %d\nFastQ records discarded (both pairs and singles): %d\n\n", kept_p, (kept_p/2), kept_s, discard);
 
 	kseq_destroy (fqrec1);
 	kseq_destroy (fqrec2);
