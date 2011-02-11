@@ -11,7 +11,7 @@ Sickle is a tool that uses sliding windows along with quality and length
 thresholds to determine when quality is sufficiently low to trim the 
 3'-end of reads.  It will also discard reads based upon the length threshold.
 It takes the quality values and slides a window across them whose length is 0.1
-times the length of the read.  If this value is less than 1, then the window
+times the length of the read.  If this length is less than 1, then the window
 is set to be equal to the length of the read.  Otherwise, the window slides
 along the quality values until the average quality in the window drops 
 below the threshold.  At that point the algorithm determines where in the 
@@ -64,7 +64,7 @@ Examples:
 ### sickle pe
 
 sickle pe takes two paired-end files as input and outputs two trimmed paired-end files 
-as well as a "singles" file.  This file contains reads that passed filter in one of the
+as well as a "singles" file.  The "singles" file contains reads that passed filter in one of the
 paired-end files but not the other.  You can also change the length and quality thresholds 
 for trimming.
 
