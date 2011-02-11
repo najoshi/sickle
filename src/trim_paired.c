@@ -63,6 +63,9 @@ int paired_main (int argc, char *argv[]) {
 	extern char *optarg;
 	int qualtype=-1;
 	int p1cut,p2cut;
+	char *outfn1=NULL;
+	char *outfn2=NULL;
+	char *sfn=NULL;
 
 	while (1) {
 		int option_index = 0;
@@ -101,27 +104,18 @@ int paired_main (int argc, char *argv[]) {
 				break;
 
 			case 'o':
-				outfile1 = fopen (optarg, "w");
-				if (!outfile1) {
-					fprintf (stderr, "Could not open output file '%s'.\n", optarg);
-					return EXIT_FAILURE;
-				}
+				outfn1 = (char*) malloc (strlen (optarg) + 1);
+				strcpy (outfn1, optarg);
 				break;
 
 			case 'p':
-				outfile2 = fopen (optarg, "w");
-				if (!outfile2) {
-					fprintf (stderr, "Could not open output file '%s'.\n", optarg);
-					return EXIT_FAILURE;
-				}
+				outfn2 = (char*) malloc (strlen (optarg) + 1);
+				strcpy (outfn2, optarg);
 				break;
 
 			case 's':
-				single = fopen (optarg, "w");
-				if (!single) {
-					fprintf (stderr, "Could not open output file '%s'.\n", optarg);
-					return EXIT_FAILURE;
-				}
+				sfn = (char*) malloc (strlen (optarg) + 1);
+				strcpy (sfn, optarg);
 				break;
 
 			case 'q':
@@ -158,8 +152,26 @@ int paired_main (int argc, char *argv[]) {
 	}
 
 
-	if (!pe1 || !pe2 || !outfile1 || !outfile2 || !single || qualtype == -1) {
+	if (!pe1 || !pe2 || qualtype == -1) {
 		paired_usage (EXIT_FAILURE);
+	}
+
+	outfile1 = fopen (outfn1, "w");
+	if (!outfile1) {
+		fprintf (stderr, "Could not open output file '%s'.\n", outfn1);
+		return EXIT_FAILURE;
+	}
+
+	outfile2 = fopen (outfn2, "w");
+	if (!outfile2) {
+		fprintf (stderr, "Could not open output file '%s'.\n", outfn2);
+		return EXIT_FAILURE;
+	}
+
+	single = fopen (sfn, "w");
+	if (!single) {
+		fprintf (stderr, "Could not open output file '%s'.\n", sfn);
+		return EXIT_FAILURE;
 	}
 
 

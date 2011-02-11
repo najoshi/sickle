@@ -53,6 +53,7 @@ int single_main (int argc, char *argv[]) {
 	extern char *optarg;
 	int qualtype=-1;
 	int p1cut;
+	char *outfn=NULL;
 
 	while (1) {
 		int option_index = 0;
@@ -83,11 +84,8 @@ int single_main (int argc, char *argv[]) {
 				break;
 
 			case 'o':
-				outfile = fopen (optarg, "w");
-				if (!outfile) {
-					fprintf (stderr, "Could not open output file '%s'.\n", optarg);
-					return EXIT_FAILURE;
-				}
+				outfn = (char*) malloc (strlen (optarg) + 1);
+				strcpy (outfn, optarg);
 				break;
 
 			case 'q':
@@ -124,8 +122,14 @@ int single_main (int argc, char *argv[]) {
 	}
 
 
-	if (!se || !outfile || qualtype == -1) {
+	if (!se || qualtype == -1) {
 		single_usage (EXIT_FAILURE);
+	}
+
+	outfile = fopen (outfn, "w");
+	if (!outfile) {
+		fprintf (stderr, "Could not open output file '%s'.\n", outfn);
+		return EXIT_FAILURE;
 	}
 
 
