@@ -55,6 +55,7 @@ Running sickle with either the "se" or "pe" commands will give help specific to 
 
 sickle se takes an input fastq file and outputs a trimmed version of that file. 
 It also has options to change the length and quality thresholds for trimming.
+
 Examples:
 
     sickle se -f input_file.fastq -t illumina -o trimmed_output_file.fastq
@@ -66,6 +67,7 @@ sickle pe takes two paired-end files as input and outputs two trimmed paired-end
 as well as a "singles" file.  This file contains reads that passed filter in one of the
 paired-end files but not the other.  You can also change the length and quality thresholds 
 for trimming.
+
 Examples:
 
     sickle pe -f input_file1.fastq -r input_file2.fastq -t sanger -o trimmed_output_file1.fastq -p trimmed_output_file2.fastq -s trimmed_singles_file.fastq
