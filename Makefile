@@ -1,30 +1,31 @@
 PROGRAM_NAME = sickle
-VERSION = 0.93
+VERSION = 0.94
 CC = gcc
 CFLAGS = -Wall -pedantic -DVERSION=$(VERSION)
 DEBUG = -g
 OPT = -O3
 ARCHIVE = $(PROGRAM_NAME)_$(VERSION)
-
-# Mac OS X - Linux may need different linking
 LDFLAGS = -lz
+SDIR = src
+
+.PHONY: clean default build distclean dist debug
 
 default: build
 
-sliding.o: src/sliding.c src/kseq.h src/sickle.h
-	$(CC) $(CFLAGS) $(OPT) -c $?
+sliding.o: $(SDIR)/sliding.c $(SDIR)/kseq.h $(SDIR)/sickle.h
+	$(CC) $(CFLAGS) $(OPT) -c $(SDIR)/$*.c
 
-trim_single.o: src/trim_single.c src/sickle.h src/kseq.h
-	$(CC) $(CFLAGS) $(OPT) -c $?
+trim_single.o: $(SDIR)/trim_single.c $(SDIR)/sickle.h $(SDIR)/kseq.h
+	$(CC) $(CFLAGS) $(OPT) -c $(SDIR)/$*.c
 
-trim_paired.o: src/trim_paired.c src/sickle.h src/kseq.h
-	$(CC) $(CFLAGS) $(OPT) -c $?
+trim_paired.o: $(SDIR)/trim_paired.c $(SDIR)/sickle.h $(SDIR)/kseq.h
+	$(CC) $(CFLAGS) $(OPT) -c $(SDIR)/$*.c
 
-sickle.o: src/sickle.c src/sickle.h
-	$(CC) $(CFLAGS) $(OPT) -c $?
+sickle.o: $(SDIR)/sickle.c $(SDIR)/sickle.h
+	$(CC) $(CFLAGS) $(OPT) -c $(SDIR)/$*.c
 
 clean:
-	rm -rf *.o src/*.gch ./sickle
+	rm -rf *.o $(SDIR)/*.gch ./sickle
 
 distclean: clean
 	rm -rf *.tar.gz
