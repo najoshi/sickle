@@ -54,6 +54,7 @@ int single_main (int argc, char *argv[]) {
 	int qualtype=-1;
 	int p1cut;
 	char *outfn=NULL;
+	char *infn=NULL;
 	int kept=0;
 	int discard=0;
 
@@ -67,11 +68,8 @@ int single_main (int argc, char *argv[]) {
 			if (single_long_options[option_index].flag != 0) break;
 
 			case 'f':
-				se = gzopen (optarg, "r");
-				if (!se) {
-					fprintf (stderr, "Could not open fastq file '%s'.\n", optarg);
-					return EXIT_FAILURE;
-				}
+				infn = (char*) malloc (strlen (optarg) + 1);
+				strcpy (infn, optarg);
 				break;
 
 			case 't':
@@ -124,8 +122,19 @@ int single_main (int argc, char *argv[]) {
 	}
 
 
-	if (!se || qualtype == -1) {
+	if (qualtype == -1 || !infn || !outfn) {
 		single_usage (EXIT_FAILURE);
+	}
+
+	if (!strcmp (infn, outfn)) {
+		fprintf (stderr, "Error: Input file is same as output file.\n");
+		return EXIT_FAILURE;
+	}
+
+	se = gzopen (infn, "r");
+	if (!se) {
+		fprintf (stderr, "Could not open input file '%s'.\n", infn);
+		return EXIT_FAILURE;
 	}
 
 	outfile = fopen (outfn, "w");
@@ -134,7 +143,7 @@ int single_main (int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
-
+	
 	fqrec = kseq_init (se);
 
 	while ((l = kseq_read (fqrec)) >= 0) {

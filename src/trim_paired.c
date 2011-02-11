@@ -66,6 +66,8 @@ int paired_main (int argc, char *argv[]) {
 	char *outfn1=NULL;
 	char *outfn2=NULL;
 	char *sfn=NULL;
+	char *infn1=NULL;
+	char *infn2=NULL;
 	int kept_p=0;
 	int kept_s=0;
 	int discard=0;
@@ -80,19 +82,13 @@ int paired_main (int argc, char *argv[]) {
 			if (paired_long_options[option_index].flag != 0) break;
 
 			case 'f':
-				pe1 = gzopen (optarg, "r");
-				if (!pe1) {
-					fprintf (stderr, "Could not open fastq file '%s'.\n", optarg);
-					return EXIT_FAILURE;
-				}
+				infn1 = (char*) malloc (strlen (optarg) + 1);
+				strcpy (infn1, optarg);
 				break;
 
 			case 'r':
-				pe2 = gzopen (optarg, "r");
-				if (!pe2) {
-					fprintf (stderr, "Could not open fastq file '%s'.\n", optarg);
-					return EXIT_FAILURE;
-				}
+				infn2 = (char*) malloc (strlen (optarg) + 1);
+				strcpy (infn2, optarg);
 				break;
 
 			case 't':
@@ -155,8 +151,29 @@ int paired_main (int argc, char *argv[]) {
 	}
 
 
-	if (!pe1 || !pe2 || qualtype == -1) {
+	if (qualtype == -1 || !infn1 || !infn2 || !outfn1 || !outfn2 || !sfn) {
 		paired_usage (EXIT_FAILURE);
+	}
+
+	if (!strcmp (infn1, infn2) || !strcmp (infn1, outfn1) || !strcmp (infn1, outfn2) ||
+		!strcmp (infn1, sfn) || !strcmp (infn2, outfn1) || !strcmp (infn2, outfn2) ||
+		!strcmp (infn2, sfn) || !strcmp (outfn1, outfn2) || !strcmp (outfn1, sfn) ||
+		!strcmp (outfn2, sfn)) {
+
+		fprintf (stderr, "Error: Duplicate input and/or output file names.\n");
+		return EXIT_FAILURE;
+	}
+
+	pe1 = gzopen (infn1, "r");
+	if (!pe1) {
+		fprintf (stderr, "Could not open input file '%s'.\n", infn1);
+		return EXIT_FAILURE;
+	}
+
+	pe2 = gzopen (infn2, "r");
+	if (!pe2) {
+		fprintf (stderr, "Could not open input file '%s'.\n", infn2);
+		return EXIT_FAILURE;
 	}
 
 	outfile1 = fopen (outfn1, "w");
