@@ -55,7 +55,8 @@ Running sickle by itself will give print the help:
 Running sickle with either the "se" or "pe" commands will give help
 specific to those commands:
 
-    sickle se sickle pe
+    sickle se
+    sickle pe
 
 ### Sickle Single End (`sickle se`)
 
@@ -76,7 +77,7 @@ file contains reads that passed filter in one of the paired-end files
 but not the other.  You can also change the length and quality
 thresholds for trimming.
 
-Examples:
+#### Examples
 
     sickle pe -f input_file1.fastq -r input_file2.fastq -t sanger \
     -o trimmed_output_file1.fastq -p trimmed_output_file2.fastq \
