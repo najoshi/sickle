@@ -69,8 +69,11 @@ int paired_main (int argc, char *argv[]) {
 	char *infn1=NULL;
 	char *infn2=NULL;
 	int kept_p=0;
-	int kept_s=0;
-	int discard=0;
+	int discard_p=0;
+	int kept_s1=0;
+	int kept_s2=0;
+	int discard_s1=0;
+	int discard_s2=0;
 
 	while (1) {
 		int option_index = 0;
@@ -211,14 +214,25 @@ int paired_main (int argc, char *argv[]) {
 
 		/* if both sequences passed quality and length filters, then output both records */
 		if (p1cut >= 0 && p2cut >= 0) {
-			fprintf (outfile1, "@%s\n", fqrec1->name.s);
+			fprintf (outfile1, "@%s", fqrec1->name.s);
+			if (fqrec1->comment.l) fprintf (outfile1, " %s\n", fqrec1->comment.s);
+			else fprintf (outfile1, "\n");
 			fprintf (outfile1, "%.*s\n", p1cut, fqrec1->seq.s);
-			fprintf (outfile1, "+%s\n", fqrec1->name.s);
+
+			fprintf (outfile1, "+%s", fqrec1->name.s);
+			if (fqrec1->comment.l) fprintf (outfile1, " %s\n", fqrec1->comment.s);
+			else fprintf (outfile1, "\n");
 			fprintf (outfile1, "%.*s\n", p1cut, fqrec1->qual.s);
 
-			fprintf (outfile2, "@%s\n", fqrec2->name.s);
+
+			fprintf (outfile2, "@%s", fqrec2->name.s);
+			if (fqrec2->comment.l) fprintf (outfile2, " %s\n", fqrec2->comment.s);
+			else fprintf (outfile2, "\n");
 			fprintf (outfile2, "%.*s\n", p2cut, fqrec2->seq.s);
-			fprintf (outfile2, "+%s\n", fqrec2->name.s);
+
+			fprintf (outfile2, "+%s", fqrec2->name.s);
+			if (fqrec2->comment.l) fprintf (outfile2, " %s\n", fqrec2->comment.s);
+			else fprintf (outfile2, "\n");
 			fprintf (outfile2, "%.*s\n", p2cut, fqrec2->qual.s);
 
 			kept_p += 2;
@@ -226,26 +240,36 @@ int paired_main (int argc, char *argv[]) {
 
 		/* if only one sequence passed filter, then put its record in singles and discard the other */
 		else if (p1cut >= 0 && p2cut < 0) {
-			fprintf (single, "@%s\n", fqrec1->name.s);
+			fprintf (single, "@%s", fqrec1->name.s);
+			if (fqrec1->comment.l) fprintf (single, " %s\n", fqrec1->comment.s);
+			else fprintf (single, "\n");
 			fprintf (single, "%.*s\n", p1cut, fqrec1->seq.s);
-			fprintf (single, "+%s\n", fqrec1->name.s);
+
+			fprintf (single, "+%s", fqrec1->name.s);
+			if (fqrec1->comment.l) fprintf (single, " %s\n", fqrec1->comment.s);
+			else fprintf (single, "\n");
 			fprintf (single, "%.*s\n", p1cut, fqrec1->qual.s);
 
-			kept_s++;
-			discard++;
+			kept_s1++;
+			discard_s2++;
 		}
 
 		else if (p1cut < 0 && p2cut >= 0) {
-			fprintf (single, "@%s\n", fqrec2->name.s);
+			fprintf (single, "@%s", fqrec2->name.s);
+			if (fqrec2->comment.l) fprintf (single, " %s\n", fqrec2->comment.s);
+			else fprintf (single, "\n");
 			fprintf (single, "%.*s\n", p2cut, fqrec2->seq.s);
-			fprintf (single, "+%s\n", fqrec2->name.s);
+
+			fprintf (single, "+%s", fqrec2->name.s);
+			if (fqrec2->comment.l) fprintf (single, " %s\n", fqrec2->comment.s);
+			else fprintf (single, "\n");
 			fprintf (single, "%.*s\n", p2cut, fqrec2->qual.s);
 
-			kept_s++;
-			discard++;
+			kept_s2++;
+			discard_s1++;
 		}
 
-		else discard += 2;
+		else discard_p += 2;
 	}
 
 	if (l1 < 0) {
@@ -255,7 +279,7 @@ int paired_main (int argc, char *argv[]) {
 		}
 	}
 
-	fprintf (stderr, "\nFastQ paired records kept: %d (%d pairs)\nFastQ single records kept: %d\nFastQ records discarded (both pairs and singles): %d\n\n", kept_p, (kept_p/2), kept_s, discard);
+	fprintf (stderr, "\nFastQ paired records kept: %d (%d pairs)\nFastQ single records kept: %d (from PE1: %d, from PE2: %d)\nFastQ paired records discarded: %d (%d pairs)\nFastQ single records discarded: %d (from PE1: %d, from PE2: %d)\n\n", kept_p, (kept_p/2), (kept_s1+kept_s2), kept_s1, kept_s2, discard_p, (discard_p/2), (discard_s1+discard_s2), discard_s1, discard_s2);
 
 	kseq_destroy (fqrec1);
 	kseq_destroy (fqrec2);

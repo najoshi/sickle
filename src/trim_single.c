@@ -152,9 +152,16 @@ int single_main (int argc, char *argv[]) {
 
 		/* if sequence quality and length pass filter then output record, else discard */
 		if (p1cut >= 0) {
-			fprintf (outfile, "@%s\n", fqrec->name.s);
+			fprintf (outfile, "@%s", fqrec->name.s);
+			if (fqrec->comment.l) fprintf (outfile, " %s\n", fqrec->comment.s);
+			else fprintf (outfile, "\n");
+
 			fprintf (outfile, "%.*s\n", p1cut, fqrec->seq.s);
-			fprintf (outfile, "+%s\n", fqrec->name.s);
+
+			fprintf (outfile, "+%s", fqrec->name.s);
+			if (fqrec->comment.l) fprintf (outfile, " %s\n", fqrec->comment.s);
+			else fprintf (outfile, "\n");
+
 			fprintf (outfile, "%.*s\n", p1cut, fqrec->qual.s);
 			kept++;
 		}
