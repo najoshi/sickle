@@ -48,7 +48,7 @@ Then, copy or move "sickle" to a directory in your $PATH.
 Sickle has two modes to work with both paired-end and single-end
 reads: `sickle se` and `sickle pe`.
 
-Running sickle by itself will give print the help:
+Running sickle by itself will print the help:
 
     sickle
 
