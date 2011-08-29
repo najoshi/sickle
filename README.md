@@ -25,7 +25,8 @@ and Sanger. Note that the Solexa quality setting is an approximation
 (the actual conversion is a non-linear transformation). The end
 approximation is close.
 
-Sickle also supports gzipped file inputs.
+Sickle also supports gzipped file inputs. There is also a sickle.xml file
+included in the package that can be used to add sickle to your local [Galaxy](http://galaxy.psu.edu/) server.
 
 ## Requirements 
 
