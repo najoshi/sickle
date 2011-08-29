@@ -1,0 +1,79 @@
+<tool id="sickle" name="Sickle">
+	<description>Window Adaptive Trimming of FastQ data</description>
+
+	<command>
+		sickle $readtype.single_or_paired
+
+		#if str($readtype.single_or_paired) == "se":
+		-f $input_single -t $qual_type -o $output_single
+		#end if
+
+		#if str($readtype.single_or_paired) == "pe":
+		-f $input_paired1 -r $input_paired2 -o $output_paired1 -p $output_paired2 -s $output_paired_single -t $qual_type
+		#end if
+
+		#if str($qual_threshold) != "":
+		-q $qual_threshold
+		#end if
+
+		#if str($length_threshold) != "":
+		-l $length_threshold
+		#end if
+
+		2> /dev/null
+	</command>
+
+	<inputs>
+		<conditional name="readtype">
+			<param name="single_or_paired" type="select" optional="false" label="Single-End or Paired-End reads?">
+				<option value="se" selected="true">Single-End</option>
+				<option value="pe">Paired-End</option>
+			</param>
+
+			<when value="se">
+				<param format="fastq, fastqsanger" name="input_single" type="data" optional="false" label="Single-End FastQ Reads"/>
+			</when>
+
+			<when value="pe">
+				<param format="fastq, fastqsanger" name="input_paired1" type="data" optional="false" label="Paired-End Forward Strand FastQ Reads"/>
+				<param format="fastq, fastqsanger" name="input_paired2" type="data" optional="false" label="Paired-End Reverse Strand FastQ Reads"/>
+			</when>
+		</conditional>
+
+		<param name="qual_type" type="select" optional="false" label="Quality type">
+			<option value="illumina" selected="true">Illumina</option>
+			<option value="phred">Phred</option>
+			<option value="sanger">Sanger</option>
+		</param>
+
+		<param name="qual_threshold" value="20" type="integer" optional="true" label="Quality Threshold">
+			<validator type="in_range" min="0" message="Minimum value is 0"/>
+		</param>
+
+		<param name="length_threshold" value="20" type="integer" optional="true" label="Length Threshold">
+			<validator type="in_range" min="0" message="Minimum value is 0"/>
+		</param>
+	</inputs>
+
+	<outputs>
+		<data format="fastq" name="output_single" label="Single-End output of ${tool.name} on ${on_string}">
+		<filter>(readtype['single_or_paired'] == 'se')</filter>
+		</data>
+
+		<data format="fastq" name="output_paired1" label="Paired-End forward strand output of ${tool.name} on ${on_string}">
+		<filter>(readtype['single_or_paired'] == 'pe')</filter>
+		</data>
+
+		<data format="fastq" name="output_paired2" label="Paired-End reverse strand output of ${tool.name} on ${on_string}">
+		<filter>(readtype['single_or_paired'] == 'pe')</filter>
+		</data>
+
+		<data format="fastq" name="output_paired_single" label="Singletons from Paired-End output of ${tool.name} on ${on_string}">
+		<filter>(readtype['single_or_paired'] == 'pe')</filter>
+		</data>
+	</outputs>
+
+	<help>
+	</help>
+
+</tool>
