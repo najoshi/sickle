@@ -2,7 +2,7 @@
 	<description>Window Adaptive Trimming of FastQ data</description>
 
 	<command>
-		sickle $readtype.single_or_paired
+		sickle $readtype.single_or_paired --quiet
 
 		#if str($readtype.single_or_paired) == "se":
 		-f $input_single -t $qual_type -o $output_single
