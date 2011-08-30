@@ -20,6 +20,7 @@ static struct option single_long_options[] = {
   {"qual-type", required_argument, 0, 't'},
   {"qual-threshold", optional_argument, 0, 'q'},
   {"length-threshold", optional_argument, 0, 'l'},
+  {"quiet", optional_argument, 0, 'z'},
   {GETOPT_HELP_OPTION_DECL},
   {GETOPT_VERSION_OPTION_DECL},
   {NULL, 0, NULL, 0}
@@ -36,6 +37,7 @@ Options:\n\
   fprintf (stderr, "-o, --output-file, Output trimmed fastq file (required)\n\
 -q, --qual-threshold, Threshold for trimming based on average quality in a window. Default 20.\n\
 -l, --length-threshold, Threshold to keep a read based on length after trimming. Default 20.\n\
+--quiet, Don't print out any trimming information\n\
 --help, display this help and exit\n\
 --version, output version information and exit\n\n");
 
@@ -57,10 +59,11 @@ int single_main (int argc, char *argv[]) {
 	char *infn=NULL;
 	int kept=0;
 	int discard=0;
+	int quiet=0;
 
 	while (1) {
 		int option_index = 0;
-		optc = getopt_long (argc, argv, "df:t:o:q:l:",single_long_options, &option_index);
+		optc = getopt_long (argc, argv, "df:t:o:q:l:z",single_long_options, &option_index);
 
 		if (optc == -1) break;
 
@@ -102,6 +105,10 @@ int single_main (int argc, char *argv[]) {
 					fprintf (stderr, "Length threshold must be >= 0\n");
 					return EXIT_FAILURE;
 				}
+				break;
+
+			case 'z':
+				quiet=1;
 				break;
 
 			case 'd':
@@ -169,7 +176,7 @@ int single_main (int argc, char *argv[]) {
 		else discard++;
 	}
 
-	fprintf (stderr, "\nFastQ records kept: %d\nFastQ records discarded: %d\n\n", kept, discard);
+	if (!quiet) fprintf (stdout, "\nFastQ records kept: %d\nFastQ records discarded: %d\n\n", kept, discard);
 
 	kseq_destroy (fqrec);
 	gzclose (se);

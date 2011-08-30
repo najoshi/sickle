@@ -23,6 +23,7 @@ static struct option paired_long_options[] = {
 	{"output-single", required_argument, 0, 's'},
 	{"qual-threshold", optional_argument, 0, 'q'},
 	{"length-threshold", optional_argument, 0, 'l'},
+	{"quiet", optional_argument, 0, 'z'},
 	{GETOPT_HELP_OPTION_DECL},
 	{GETOPT_VERSION_OPTION_DECL},
 	{NULL, 0, NULL, 0}
@@ -42,6 +43,7 @@ Options:\n\
 -s, --output-single, Output trimmed singles fastq file (required)\n\
 -q, --qual-threshold, Threshold for trimming based on average quality in a window. Default 20.\n\
 -l, --length-threshold, Threshold to keep a read based on length after trimming. Default 20.\n\
+--quiet, do not output trimming info\n\
 --help, display this help and exit\n\
 --version, output version information and exit\n\n");
 
@@ -74,6 +76,7 @@ int paired_main (int argc, char *argv[]) {
 	int kept_s2=0;
 	int discard_s1=0;
 	int discard_s2=0;
+	int quiet=0;
 
 	while (1) {
 		int option_index = 0;
@@ -134,6 +137,10 @@ int paired_main (int argc, char *argv[]) {
 					fprintf (stderr, "Length threshold must be >= 0\n");
 					return EXIT_FAILURE;
 				}
+				break;
+
+			case 'z':
+				quiet=1;
 				break;
 
 			case 'd':
@@ -279,7 +286,7 @@ int paired_main (int argc, char *argv[]) {
 		}
 	}
 
-	fprintf (stderr, "\nFastQ paired records kept: %d (%d pairs)\nFastQ single records kept: %d (from PE1: %d, from PE2: %d)\nFastQ paired records discarded: %d (%d pairs)\nFastQ single records discarded: %d (from PE1: %d, from PE2: %d)\n\n", kept_p, (kept_p/2), (kept_s1+kept_s2), kept_s1, kept_s2, discard_p, (discard_p/2), (discard_s1+discard_s2), discard_s1, discard_s2);
+	if (!quiet) fprintf (stdout, "\nFastQ paired records kept: %d (%d pairs)\nFastQ single records kept: %d (from PE1: %d, from PE2: %d)\nFastQ paired records discarded: %d (%d pairs)\nFastQ single records discarded: %d (from PE1: %d, from PE2: %d)\n\n", kept_p, (kept_p/2), (kept_s1+kept_s2), kept_s1, kept_s2, discard_p, (discard_p/2), (discard_s1+discard_s2), discard_s1, discard_s2);
 
 	kseq_destroy (fqrec1);
 	kseq_destroy (fqrec2);
