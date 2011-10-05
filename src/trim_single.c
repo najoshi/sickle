@@ -165,8 +165,13 @@ int single_main (int argc, char *argv[]) {
 			if (fqrec->comment.l) fprintf (outfile, " %s\n", fqrec->comment.s);
 			else fprintf (outfile, "\n");
 
+			/* if there is no five prime cutting, then use the simple output method */
+			/* else we need to use strncpy */
 			if (p1cut->five_prime_cut == 0) fprintf (outfile, "%.*s\n", p1cut->three_prime_cut, fqrec->seq.s);
 			else {
+				/* copy the part of the string past the five prime cut point */
+				/* and then adjust the three prime cut point by subtracting the five prime cut point */
+				/* since the 5' cut point was calculated from the full length */
 				seq = (char*) malloc (strlen(fqrec->seq.s)+1);
 				strncpy (seq, fqrec->seq.s + p1cut->five_prime_cut, fqrec->seq.l);
 				fprintf (outfile, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, seq);
