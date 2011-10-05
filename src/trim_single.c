@@ -54,12 +54,14 @@ int single_main (int argc, char *argv[]) {
 	int optc;
 	extern char *optarg;
 	int qualtype=-1;
-	int p1cut;
+	cutsites* p1cut;
 	char *outfn=NULL;
 	char *infn=NULL;
 	int kept=0;
 	int discard=0;
 	int quiet=0;
+	char* seq;
+	char* qual;
 
 	while (1) {
 		int option_index = 0;
@@ -158,22 +160,37 @@ int single_main (int argc, char *argv[]) {
 		p1cut = sliding_window (fqrec, qualtype, single_length_threshold, single_qual_threshold);
 
 		/* if sequence quality and length pass filter then output record, else discard */
-		if (p1cut >= 0) {
+		if (p1cut->three_prime_cut >= 0) {
 			fprintf (outfile, "@%s", fqrec->name.s);
 			if (fqrec->comment.l) fprintf (outfile, " %s\n", fqrec->comment.s);
 			else fprintf (outfile, "\n");
 
-			fprintf (outfile, "%.*s\n", p1cut, fqrec->seq.s);
+			if (p1cut->five_prime_cut == 0) fprintf (outfile, "%.*s\n", p1cut->three_prime_cut, fqrec->seq.s);
+			else {
+				seq = (char*) malloc (strlen(fqrec->seq.s)+1);
+				strncpy (seq, fqrec->seq.s + p1cut->five_prime_cut, fqrec->seq.l - p1cut->five_prime_cut);
+				fprintf (outfile, "%.*s\n", p1cut->three_prime_cut, seq);
+				free(seq);
+			}
 
 			fprintf (outfile, "+%s", fqrec->name.s);
 			if (fqrec->comment.l) fprintf (outfile, " %s\n", fqrec->comment.s);
 			else fprintf (outfile, "\n");
 
-			fprintf (outfile, "%.*s\n", p1cut, fqrec->qual.s);
+			if (p1cut->five_prime_cut == 0) fprintf (outfile, "%.*s\n", p1cut->three_prime_cut, fqrec->qual.s);
+			else {
+				qual = (char*) malloc (strlen(fqrec->qual.s)+1);
+				strncpy (qual, fqrec->qual.s + p1cut->five_prime_cut, fqrec->qual.l - p1cut->five_prime_cut);
+				fprintf (outfile, "%.*s\n", p1cut->three_prime_cut, qual);
+				free(qual);
+			}
+
 			kept++;
 		}
 
 		else discard++;
+
+		free(p1cut);
 	}
 
 	if (!quiet) fprintf (stdout, "\nFastQ records kept: %d\nFastQ records discarded: %d\n\n", kept, discard);

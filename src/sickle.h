@@ -80,9 +80,15 @@ static const int quality_constants[4][3] = {
   {64, 0, 62} /* ILLUMINA */
 };
 
+typedef struct __cutsites_ {
+    int five_prime_cut;
+	int three_prime_cut;
+} cutsites;
+
+
 /* Function Prototypes */
 int single_main (int argc, char *argv[]);
-int paired_main (int argc, char *argv[]);
-int sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int qual_threshold);
+/*int paired_main (int argc, char *argv[]);*/
+cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int qual_threshold);
 
 #endif /*SICKLE_H*/

@@ -19,13 +19,16 @@ int get_quality_num (char qualchar, int qualtype) {
 }
 
 
-int sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int qual_threshold) {
+cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int qual_threshold) {
 
 	int window_size = (int) (0.1 * fqrec->seq.l);
 	int i,j;
 	int window_start=0;
 	int window_total=0;
-	int p1cut = fqrec->seq.l;
+	int three_prime_cut = fqrec->seq.l;
+	int five_prime_cut = 0;
+	int found_five_prime = 0;
+	cutsites* retvals;
 
 	/* if the seq length is less then 10bp, */
 	/* then make the window size the length of the seq */
@@ -37,6 +40,22 @@ int sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int qual_
 
 	for (i=0; i<fqrec->qual.l; i++) {
 
+		/* Finding the 5' cutoff */
+		/* Find when the average quality in the window goes above the threshold starting from the 5' end */
+		if (found_five_prime == 0 && (double)window_total / (double)window_size >= qual_threshold) {
+
+			/* at what point in the window does the quality go above the threshold? */
+			for (j=window_start; j<window_start+window_size; j++) {
+				if (get_quality_num (fqrec->qual.s[j], qualtype) >= qual_threshold) {
+					five_prime_cut = j;
+					break;
+				}
+			}
+
+			found_five_prime = 1;
+		}
+
+		/* Finding the 3' cutoff */
 		/* if the average quality in the window is less than the threshold */
 		/* or if the window is the last window in the read */
 		if (((double)window_total / (double)window_size < qual_threshold) || 
@@ -45,11 +64,14 @@ int sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int qual_
 			/* at what point in the window does the quality dip below the threshold? */
 			for (j=window_start; j<window_start+window_size; j++) {
 				if (get_quality_num (fqrec->qual.s[j], qualtype) < qual_threshold) {
-					p1cut = j;
+					three_prime_cut = j;
 
-					/* if cutting length is less than threshold then return -1 */
+					/* if cutting length is less than threshold then return -1 for both */
 					/* to indicate that the read should be discarded */
-					if (p1cut < length_threshold) {p1cut = -1;}
+					if (three_prime_cut - five_prime_cut < length_threshold) {
+						three_prime_cut = -1;
+						five_prime_cut = -1;
+					}
 					break;
 				}
 			}
@@ -63,5 +85,8 @@ int sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int qual_
 		window_start++;
 	}
 
-	return p1cut;
+	retvals = (cutsites*) malloc (sizeof(cutsites));
+	retvals->three_prime_cut = three_prime_cut;
+	retvals->five_prime_cut = five_prime_cut;
+	return (retvals);
 }

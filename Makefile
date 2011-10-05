@@ -18,9 +18,6 @@ sliding.o: $(SDIR)/sliding.c $(SDIR)/kseq.h $(SDIR)/sickle.h
 trim_single.o: $(SDIR)/trim_single.c $(SDIR)/sickle.h $(SDIR)/kseq.h
 	$(CC) $(CFLAGS) $(OPT) -c $(SDIR)/$*.c
 
-trim_paired.o: $(SDIR)/trim_paired.c $(SDIR)/sickle.h $(SDIR)/kseq.h
-	$(CC) $(CFLAGS) $(OPT) -c $(SDIR)/$*.c
-
 sickle.o: $(SDIR)/sickle.c $(SDIR)/sickle.h
 	$(CC) $(CFLAGS) $(OPT) -c $(SDIR)/$*.c
 
@@ -33,7 +30,7 @@ distclean: clean
 dist:
 	tar -zcf $(ARCHIVE).tar.gz src Makefile
 
-build: sliding.o trim_single.o trim_paired.o sickle.o
+build: sliding.o trim_single.o sickle.o
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OPT) $? -o sickle
 
 debug:
