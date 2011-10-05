@@ -168,8 +168,8 @@ int single_main (int argc, char *argv[]) {
 			if (p1cut->five_prime_cut == 0) fprintf (outfile, "%.*s\n", p1cut->three_prime_cut, fqrec->seq.s);
 			else {
 				seq = (char*) malloc (strlen(fqrec->seq.s)+1);
-				strncpy (seq, fqrec->seq.s + p1cut->five_prime_cut, fqrec->seq.l - p1cut->five_prime_cut);
-				fprintf (outfile, "%.*s\n", p1cut->three_prime_cut, seq);
+				strncpy (seq, fqrec->seq.s + p1cut->five_prime_cut, fqrec->seq.l);
+				fprintf (outfile, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, seq);
 				free(seq);
 			}
 
@@ -180,8 +180,8 @@ int single_main (int argc, char *argv[]) {
 			if (p1cut->five_prime_cut == 0) fprintf (outfile, "%.*s\n", p1cut->three_prime_cut, fqrec->qual.s);
 			else {
 				qual = (char*) malloc (strlen(fqrec->qual.s)+1);
-				strncpy (qual, fqrec->qual.s + p1cut->five_prime_cut, fqrec->qual.l - p1cut->five_prime_cut);
-				fprintf (outfile, "%.*s\n", p1cut->three_prime_cut, qual);
+				strncpy (qual, fqrec->qual.s + p1cut->five_prime_cut, fqrec->qual.l);
+				fprintf (outfile, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, qual);
 				free(qual);
 			}
 
