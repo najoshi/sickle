@@ -23,6 +23,8 @@ static struct option paired_long_options[] = {
 	{"output-single", required_argument, 0, 's'},
 	{"qual-threshold", optional_argument, 0, 'q'},
 	{"length-threshold", optional_argument, 0, 'l'},
+	{"no-fiveprime", optional_argument, 0, 'x'},
+	{"discard-n", optional_argument, 0, 'n'},
 	{"quiet", optional_argument, 0, 'z'},
 	{GETOPT_HELP_OPTION_DECL},
 	{GETOPT_VERSION_OPTION_DECL},
@@ -43,7 +45,11 @@ Options:\n\
 -s, --output-single, Output trimmed singles fastq file (required)\n\
 -q, --qual-threshold, Threshold for trimming based on average quality in a window. Default 20.\n\
 -l, --length-threshold, Threshold to keep a read based on length after trimming. Default 20.\n\
---quiet, do not output trimming info\n\
+-x, --no-fiveprime, Don't do five prime trimming.\n\
+-n, --discard-n, Discard sequences with any Ns in them.\n");
+
+
+	fprintf (stderr, "--quiet, do not output trimming info\n\
 --help, display this help and exit\n\
 --version, output version information and exit\n\n");
 
@@ -64,7 +70,8 @@ int paired_main (int argc, char *argv[]) {
 	int optc;
 	extern char *optarg;
 	int qualtype=-1;
-	int p1cut,p2cut;
+	cutsites* p1cut;
+	cutsites* p2cut;
 	char *outfn1=NULL;
 	char *outfn2=NULL;
 	char *sfn=NULL;
@@ -77,10 +84,12 @@ int paired_main (int argc, char *argv[]) {
 	int discard_s1=0;
 	int discard_s2=0;
 	int quiet=0;
+	int no_fiveprime=0;
+	int discard_n=0;
 
 	while (1) {
 		int option_index = 0;
-		optc = getopt_long (argc, argv, "df:r:t:o:p:s:q:l:", paired_long_options, &option_index);
+		optc = getopt_long (argc, argv, "df:r:t:o:p:s:q:l:xn", paired_long_options, &option_index);
 
 		if (optc == -1) break;
 
@@ -137,6 +146,14 @@ int paired_main (int argc, char *argv[]) {
 					fprintf (stderr, "Length threshold must be >= 0\n");
 					return EXIT_FAILURE;
 				}
+				break;
+
+			case 'x':
+				no_fiveprime = 1;
+				break;
+
+			case 'n':
+				discard_n = 1;
 				break;
 
 			case 'z':
@@ -216,67 +233,74 @@ int paired_main (int argc, char *argv[]) {
 			break;
 		}
 
-		p1cut = sliding_window (fqrec1, qualtype, paired_length_threshold, paired_qual_threshold);
-		p2cut = sliding_window (fqrec2, qualtype, paired_length_threshold, paired_qual_threshold);
+		p1cut = sliding_window (fqrec1, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, discard_n);
+		p2cut = sliding_window (fqrec2, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, discard_n);
+
+		/* The sequence and quality print statements below print out the sequence string starting from the 5' cut */
+		/* and then only print out to the 3' cut, however, we need to adjust the 3' cut */
+		/* by subtracting the 5' cut because the 3' cut was calculated on the original sequence */
 
 		/* if both sequences passed quality and length filters, then output both records */
-		if (p1cut >= 0 && p2cut >= 0) {
+		if (p1cut->three_prime_cut >= 0 && p2cut->three_prime_cut >= 0) {
 			fprintf (outfile1, "@%s", fqrec1->name.s);
 			if (fqrec1->comment.l) fprintf (outfile1, " %s\n", fqrec1->comment.s);
 			else fprintf (outfile1, "\n");
-			fprintf (outfile1, "%.*s\n", p1cut, fqrec1->seq.s);
+			fprintf (outfile1, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec1->seq.s + p1cut->five_prime_cut);
 
 			fprintf (outfile1, "+%s", fqrec1->name.s);
 			if (fqrec1->comment.l) fprintf (outfile1, " %s\n", fqrec1->comment.s);
 			else fprintf (outfile1, "\n");
-			fprintf (outfile1, "%.*s\n", p1cut, fqrec1->qual.s);
+			fprintf (outfile1, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec1->qual.s + p1cut->five_prime_cut);
 
 
 			fprintf (outfile2, "@%s", fqrec2->name.s);
 			if (fqrec2->comment.l) fprintf (outfile2, " %s\n", fqrec2->comment.s);
 			else fprintf (outfile2, "\n");
-			fprintf (outfile2, "%.*s\n", p2cut, fqrec2->seq.s);
+			fprintf (outfile2, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->seq.s + p2cut->five_prime_cut);
 
 			fprintf (outfile2, "+%s", fqrec2->name.s);
 			if (fqrec2->comment.l) fprintf (outfile2, " %s\n", fqrec2->comment.s);
 			else fprintf (outfile2, "\n");
-			fprintf (outfile2, "%.*s\n", p2cut, fqrec2->qual.s);
+			fprintf (outfile2, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->qual.s + p2cut->five_prime_cut);
 
 			kept_p += 2;
 		}
 
 		/* if only one sequence passed filter, then put its record in singles and discard the other */
-		else if (p1cut >= 0 && p2cut < 0) {
+		else if (p1cut->three_prime_cut >= 0 && p2cut->three_prime_cut < 0) {
 			fprintf (single, "@%s", fqrec1->name.s);
 			if (fqrec1->comment.l) fprintf (single, " %s\n", fqrec1->comment.s);
 			else fprintf (single, "\n");
-			fprintf (single, "%.*s\n", p1cut, fqrec1->seq.s);
+			fprintf (single, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec1->seq.s + p1cut->five_prime_cut);
 
 			fprintf (single, "+%s", fqrec1->name.s);
 			if (fqrec1->comment.l) fprintf (single, " %s\n", fqrec1->comment.s);
 			else fprintf (single, "\n");
-			fprintf (single, "%.*s\n", p1cut, fqrec1->qual.s);
+			fprintf (single, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec1->qual.s + p1cut->five_prime_cut);
 
 			kept_s1++;
 			discard_s2++;
 		}
 
-		else if (p1cut < 0 && p2cut >= 0) {
+		else if (p1cut->three_prime_cut < 0 && p2cut->three_prime_cut >= 0) {
 			fprintf (single, "@%s", fqrec2->name.s);
 			if (fqrec2->comment.l) fprintf (single, " %s\n", fqrec2->comment.s);
 			else fprintf (single, "\n");
-			fprintf (single, "%.*s\n", p2cut, fqrec2->seq.s);
+			fprintf (single, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->seq.s + p2cut->five_prime_cut);
 
 			fprintf (single, "+%s", fqrec2->name.s);
 			if (fqrec2->comment.l) fprintf (single, " %s\n", fqrec2->comment.s);
 			else fprintf (single, "\n");
-			fprintf (single, "%.*s\n", p2cut, fqrec2->qual.s);
+			fprintf (single, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->qual.s + p2cut->five_prime_cut);
 
 			kept_s2++;
 			discard_s1++;
 		}
 
 		else discard_p += 2;
+
+		free(p1cut);
+		free(p2cut);
 	}
 
 	if (l1 < 0) {

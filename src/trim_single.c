@@ -20,6 +20,8 @@ static struct option single_long_options[] = {
   {"qual-type", required_argument, 0, 't'},
   {"qual-threshold", optional_argument, 0, 'q'},
   {"length-threshold", optional_argument, 0, 'l'},
+  {"no-fiveprime", optional_argument, 0, 'x'},
+  {"discard-n", optional_argument, 0, 'n'},
   {"quiet", optional_argument, 0, 'z'},
   {GETOPT_HELP_OPTION_DECL},
   {GETOPT_VERSION_OPTION_DECL},
@@ -37,6 +39,8 @@ Options:\n\
   fprintf (stderr, "-o, --output-file, Output trimmed fastq file (required)\n\
 -q, --qual-threshold, Threshold for trimming based on average quality in a window. Default 20.\n\
 -l, --length-threshold, Threshold to keep a read based on length after trimming. Default 20.\n\
+-x, --no-fiveprime, Don't do five prime trimming.\n\
+-n, --discard-n, Discard sequences with any Ns in them.\n\
 --quiet, Don't print out any trimming information\n\
 --help, display this help and exit\n\
 --version, output version information and exit\n\n");
@@ -60,10 +64,12 @@ int single_main (int argc, char *argv[]) {
 	int kept=0;
 	int discard=0;
 	int quiet=0;
+	int no_fiveprime=0;
+	int discard_n=0;
 
 	while (1) {
 		int option_index = 0;
-		optc = getopt_long (argc, argv, "df:t:o:q:l:z",single_long_options, &option_index);
+		optc = getopt_long (argc, argv, "df:t:o:q:l:zxn",single_long_options, &option_index);
 
 		if (optc == -1) break;
 
@@ -105,6 +111,14 @@ int single_main (int argc, char *argv[]) {
 					fprintf (stderr, "Length threshold must be >= 0\n");
 					return EXIT_FAILURE;
 				}
+				break;
+
+			case 'x':
+				no_fiveprime = 1;
+				break;
+
+			case 'n':
+				discard_n = 1;
 				break;
 
 			case 'z':
@@ -155,7 +169,7 @@ int single_main (int argc, char *argv[]) {
 
 	while ((l = kseq_read (fqrec)) >= 0) {
 
-		p1cut = sliding_window (fqrec, qualtype, single_length_threshold, single_qual_threshold);
+		p1cut = sliding_window (fqrec, qualtype, single_length_threshold, single_qual_threshold, no_fiveprime, discard_n);
 
 		/* if sequence quality and length pass filter then output record, else discard */
 		if (p1cut->three_prime_cut >= 0) {

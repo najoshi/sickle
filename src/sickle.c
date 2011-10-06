@@ -41,8 +41,8 @@ int main (int argc, char *argv[]) {
 	}
 
 	else if (strcmp (argv[1],"pe") == 0) {
-		/*retval = paired_main (argc, argv);
-		return (retval);*/
+		retval = paired_main (argc, argv);
+		return (retval);
 	}
 
 	else if (strcmp (argv[1],"se") == 0) {
