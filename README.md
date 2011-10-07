@@ -3,22 +3,27 @@
 ## About
 
 Most modern sequencing technologies produce reads that have
-deteriorating quality towards the 3'-end. Incorrectly called bases
-here negatively impact assembles, mapping, and downstream
+deteriorating quality towards the 3'-end and some towards the 5'-end as well. Incorrectly called bases
+in both regions negatively impact assembles, mapping, and downstream
 bioinformatics analyses.
 
 Sickle is a tool that uses sliding windows along with quality and
 length thresholds to determine when quality is sufficiently low to
-trim the 3'-end of reads.  It will also discard reads based upon the
+trim the 3'-end of reads and also determines when the quality is
+sufficiently high enough to trim the 5'-end of reads.  It will also discard reads based upon the
 length threshold.  It takes the quality values and slides a window
 across them whose length is 0.1 times the length of the read.  If this
 length is less than 1, then the window is set to be equal to the
 length of the read.  Otherwise, the window slides along the quality
-values until the average quality in the window drops below the
-threshold.  At that point the algorithm determines where in the window
-the drop occurs and cuts both the read and quality strings there.
-However, if the cut point is less than the minimum length threshold,
-then the read is discarded entirely.
+values until the average quality in the window rises above the threshold, at 
+which point the algorithm determines where within the window the rise occurs
+and cuts the read and quality there for the 5'-end cut.  Then when the avearge quality 
+in the window drops below the threshold, the algorithm determines where in the window
+the drop occurs and cuts both the read and quality strings there for the 3'-end cut.
+However, if the length of the remaining sequence is less than the minimum length threshold,
+then the read is discarded entirely.  5'-end trimming can be disabled.
+
+Sickle also has an option to discard reads with any Ns in them.
 
 Sickle supports four types of quality values: Illumina, Solexa, Phred,
 and Sanger. Note that the Solexa quality setting is an approximation
@@ -63,12 +68,14 @@ specific to those commands:
 
 `sickle se` takes an input fastq file and outputs a trimmed version of
 that file.  It also has options to change the length and quality
-thresholds for trimming.
+thresholds for trimming, as well as disabling 5'-trimming and enabling removal
+of sequences with Ns.
 
 #### Examples
 
     sickle se -f input_file.fastq -t illumina -o trimmed_output_file.fastq
     sickle se -f input_file.fastq -t illumina -o trimmed_output_file.fastq -q 33 -l 40
+	sickle se -f input_file.fastq -t illumina -o trimmed_output_file.fastq -x -n
 
 ### Sickle Paired End (`sickle pe`)
 
@@ -76,7 +83,8 @@ thresholds for trimming.
 trimmed paired-end files as well as a "singles" file.  The "singles"
 file contains reads that passed filter in one of the paired-end files
 but not the other.  You can also change the length and quality
-thresholds for trimming.
+thresholds for trimming, as well as disable 5'-trimming and enable removal
+of sequences with Ns.
 
 #### Examples
 
@@ -87,4 +95,8 @@ thresholds for trimming.
     sickle pe -f input_file1.fastq -r input_file2.fastq -t sanger \
     -o trimmed_output_file1.fastq -p trimmed_output_file2.fastq \
     -s trimmed_singles_file.fastq -q 12 -l 15
+
+	sickle pe -f input_file1.fastq -r input_file2.fastq -t sanger \
+	-o trimmed_output_file1.fastq -p trimmed_output_file2.fastq \
+	-s trimmed_singles_file.fastq -n
 

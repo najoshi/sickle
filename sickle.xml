@@ -20,6 +20,14 @@
 		-l $length_threshold
 		#end if
 
+		#if str($disable_five_prime) == 'disable_five_prime_true':
+		-x
+		#end if
+
+		#if str($discard_n) == 'discard_n_true':
+		-n
+		#end if
+
 		2> /dev/null
 	</command>
 
@@ -53,6 +61,10 @@
 		<param name="length_threshold" value="20" type="integer" optional="true" label="Length Threshold">
 			<validator type="in_range" min="0" message="Minimum value is 0"/>
 		</param>
+
+		<param name="disable_five_prime" type="boolean" truevalue="disable_five_prime_true" falsevalue="disable_five_prime_false" checked="false" label="Disable 5'-end trimming"/>
+
+		<param name="discard_n" type="boolean" truevalue="discard_n_true" falsevalue="discard_n_false" checked="false" label="Discard any sequence with any number of Ns"/>
 	</inputs>
 
 	<outputs>
