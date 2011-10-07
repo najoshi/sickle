@@ -28,6 +28,7 @@ cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int
 	int three_prime_cut = fqrec->seq.l;
 	int five_prime_cut = 0;
 	int found_five_prime = 0;
+	double window_avg;
 	cutsites* retvals;
 
 	/* If the sequence contains an "N" then discard if the option has been selected */
@@ -48,9 +49,11 @@ cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int
 
 	for (i=0; i<fqrec->qual.l; i++) {
 
+		window_avg = (double)window_total / (double)window_size;
+
 		/* Finding the 5' cutoff */
 		/* Find when the average quality in the window goes above the threshold starting from the 5' end */
-		if (no_fiveprime == 0 && found_five_prime == 0 && (double)window_total / (double)window_size >= qual_threshold) {
+		if (no_fiveprime == 0 && found_five_prime == 0 && window_avg >= qual_threshold) {
 
 			/* at what point in the window does the quality go above the threshold? */
 			for (j=window_start; j<window_start+window_size; j++) {
@@ -66,7 +69,7 @@ cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int
 		/* Finding the 3' cutoff */
 		/* if the average quality in the window is less than the threshold */
 		/* or if the window is the last window in the read */
-		if (((double)window_total / (double)window_size < qual_threshold) || 
+		if ((window_avg < qual_threshold) || 
 			(window_start+window_size > fqrec->qual.l)) {
 
 			/* at what point in the window does the quality dip below the threshold? */
