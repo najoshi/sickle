@@ -17,7 +17,7 @@ length is less than 1, then the window is set to be equal to the
 length of the read.  Otherwise, the window slides along the quality
 values until the average quality in the window rises above the threshold, at 
 which point the algorithm determines where within the window the rise occurs
-and cuts the read and quality there for the 5'-end cut.  Then when the avearge quality 
+and cuts the read and quality there for the 5'-end cut.  Then when the average quality 
 in the window drops below the threshold, the algorithm determines where in the window
 the drop occurs and cuts both the read and quality strings there for the 3'-end cut.
 However, if the length of the remaining sequence is less than the minimum length threshold,

@@ -34,7 +34,7 @@ void single_usage (int status) {
 \n\
 Options:\n\
 -f, --fastq-file, Input fastq file (required)\n\
--t, --qual-type, Type of quality values (illumina, phred, sanger) (required)\n", PROGRAM_NAME);
+-t, --qual-type, Type of quality values (illumina (CASAVA 1.3 to 1.7), sanger (which is CASAVA >= 1.8)) (required)\n", PROGRAM_NAME);
 
   fprintf (stderr, "-o, --output-file, Output trimmed fastq file (required)\n\
 -q, --qual-threshold, Threshold for trimming based on average quality in a window. Default 20.\n\
