@@ -25,10 +25,12 @@ then the read is discarded entirely.  5'-end trimming can be disabled.
 
 Sickle also has an option to discard reads with any Ns in them.
 
-Sickle supports four types of quality values: Illumina, Solexa, Phred,
+Sickle supports four types of quality values: Illumina, Solexa, 
 and Sanger. Note that the Solexa quality setting is an approximation
 (the actual conversion is a non-linear transformation). The end
-approximation is close.
+approximation is close. Illumina quality refers to qualities encoded
+with the CASAVA pipeline between versions 1.3 and 1.7.  Illumina quality
+using CASAVA >= 1.8 is Sanger encoded.
 
 Sickle also supports gzipped file inputs. There is also a sickle.xml file
 included in the package that can be used to add sickle to your local [Galaxy](http://galaxy.psu.edu/) server.

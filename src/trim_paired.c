@@ -38,7 +38,7 @@ void paired_usage (int status) {
 Options:\n\
 -f, --pe-file1, Input paired-end fastq file 1 (required, must have same number of records as pe2)\n\
 -r, --pe-file2, Input paired-end fastq file 2 (required, must have same number of records as pe1)\n\
--t, --qual-type, Type of quality values (illumina (CASAVA 1.3 to 1.7), sanger (which is CASAVA >= 1.8)) (required)\n", PROGRAM_NAME);
+-t, --qual-type, Type of quality values (solexa (CASAVA < 1.3), illumina (CASAVA 1.3 to 1.7), sanger (which is CASAVA >= 1.8)) (required)\n", PROGRAM_NAME);
 
 	fprintf (stderr, "-o, --output-pe1, Output trimmed fastq file 1 (required)\n\
 -p, --output-pe2, Output trimmed fastq file 2 (required)\n\
