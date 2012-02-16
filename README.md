@@ -25,7 +25,7 @@ then the read is discarded entirely.  5'-end trimming can be disabled.
 
 Sickle also has an option to discard reads with any Ns in them.
 
-Sickle supports four types of quality values: Illumina, Solexa, 
+Sickle supports three types of quality values: Illumina, Solexa, 
 and Sanger. Note that the Solexa quality setting is an approximation
 (the actual conversion is a non-linear transformation). The end
 approximation is close. Illumina quality refers to qualities encoded
