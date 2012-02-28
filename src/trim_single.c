@@ -182,10 +182,7 @@ int single_main (int argc, char *argv[]) {
 			/* by subtracting the 5' cut because the 3' cut was calculated on the original sequence */
 			fprintf (outfile, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec->seq.s + p1cut->five_prime_cut);
 
-			fprintf (outfile, "+%s", fqrec->name.s);
-			if (fqrec->comment.l) fprintf (outfile, " %s\n", fqrec->comment.s);
-			else fprintf (outfile, "\n");
-
+			fprintf (outfile, "+\n");
 			fprintf (outfile, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec->qual.s + p1cut->five_prime_cut);
 
 			kept++;

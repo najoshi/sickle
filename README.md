@@ -32,6 +32,9 @@ approximation is close. Illumina quality refers to qualities encoded
 with the CASAVA pipeline between versions 1.3 and 1.7.  Illumina quality
 using CASAVA >= 1.8 is Sanger encoded.
 
+Note that Sickle will remove the 2nd fastq record header (on the "+" line) and replace it
+with simply a "+". This is the default format for CASAVA >= 1.8.
+
 Sickle also supports gzipped file inputs. There is also a sickle.xml file
 included in the package that can be used to add sickle to your local [Galaxy](http://galaxy.psu.edu/) server.
 

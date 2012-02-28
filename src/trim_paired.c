@@ -247,9 +247,7 @@ int paired_main (int argc, char *argv[]) {
 			else fprintf (outfile1, "\n");
 			fprintf (outfile1, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec1->seq.s + p1cut->five_prime_cut);
 
-			fprintf (outfile1, "+%s", fqrec1->name.s);
-			if (fqrec1->comment.l) fprintf (outfile1, " %s\n", fqrec1->comment.s);
-			else fprintf (outfile1, "\n");
+			fprintf (outfile1, "+\n");
 			fprintf (outfile1, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec1->qual.s + p1cut->five_prime_cut);
 
 
@@ -258,9 +256,7 @@ int paired_main (int argc, char *argv[]) {
 			else fprintf (outfile2, "\n");
 			fprintf (outfile2, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->seq.s + p2cut->five_prime_cut);
 
-			fprintf (outfile2, "+%s", fqrec2->name.s);
-			if (fqrec2->comment.l) fprintf (outfile2, " %s\n", fqrec2->comment.s);
-			else fprintf (outfile2, "\n");
+			fprintf (outfile2, "+\n");
 			fprintf (outfile2, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->qual.s + p2cut->five_prime_cut);
 
 			kept_p += 2;
@@ -273,9 +269,7 @@ int paired_main (int argc, char *argv[]) {
 			else fprintf (single, "\n");
 			fprintf (single, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec1->seq.s + p1cut->five_prime_cut);
 
-			fprintf (single, "+%s", fqrec1->name.s);
-			if (fqrec1->comment.l) fprintf (single, " %s\n", fqrec1->comment.s);
-			else fprintf (single, "\n");
+			fprintf (single, "+\n");
 			fprintf (single, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec1->qual.s + p1cut->five_prime_cut);
 
 			kept_s1++;
@@ -288,9 +282,7 @@ int paired_main (int argc, char *argv[]) {
 			else fprintf (single, "\n");
 			fprintf (single, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->seq.s + p2cut->five_prime_cut);
 
-			fprintf (single, "+%s", fqrec2->name.s);
-			if (fqrec2->comment.l) fprintf (single, " %s\n", fqrec2->comment.s);
-			else fprintf (single, "\n");
+			fprintf (single, "+\n");
 			fprintf (single, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->qual.s + p2cut->five_prime_cut);
 
 			kept_s2++;
