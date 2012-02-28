@@ -12,7 +12,7 @@ int get_quality_num (char qualchar, int qualtype) {
      Return the adjusted quality, depending on quality type.
 
      Note that this uses the array in sickle.h, which *approximates*
-     the SOLEXA (pre-1.6 pipeline) qualities as linear. This is
+     the SOLEXA (pre-1.3 pipeline) qualities as linear. This is
      inaccurate with low-quality bases.
   */
   return((int) qualchar - quality_constants[qualtype][Q_OFFSET]);
@@ -32,7 +32,9 @@ cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int
 	cutsites* retvals;
 
 	/* If the sequence contains an "N" then discard if the option has been selected */
-	if (discard_n && (strstr(fqrec->seq.s, "N") || strstr(fqrec->seq.s, "n"))) {
+	/* Also discard if the length of the sequence is less than the length threshold */
+	if ((discard_n && (strstr(fqrec->seq.s, "N") || strstr(fqrec->seq.s, "n"))) || 
+			(fqrec->seq.l < length_threshold)) {
 		retvals = (cutsites*) malloc (sizeof(cutsites));
 		retvals->three_prime_cut = -1;
 		retvals->five_prime_cut = -1;
