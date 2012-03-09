@@ -68,6 +68,13 @@ typedef enum {
   ILLUMINA
 } quality_type;
 
+static const char typenames[4][10] = {
+	{"Phred"},
+	{"Sanger"},
+	{"Solexa"},
+	{"Illumina"}
+};
+
 #define Q_OFFSET 0
 #define Q_MIN 1
 #define Q_MAX 2
@@ -75,9 +82,9 @@ typedef enum {
 static const int quality_constants[4][3] = {
   /* offset, min, max */
   {0, 4, 60}, /* PHRED */
-  {33, 0, 93}, /* SANGER */
-  {64, -5, 62}, /* SOLEXA; this is an approx; the transform is non-linear */
-  {64, 0, 62} /* ILLUMINA */
+  {33, 33, 80}, /* SANGER */
+  {64, 58, 112}, /* SOLEXA; this is an approx; the transform is non-linear */
+  {64, 64, 110} /* ILLUMINA */
 };
 
 typedef struct __cutsites_ {

@@ -108,7 +108,6 @@ int paired_main (int argc, char *argv[]) {
 
 			case 't':
 				if (!strcmp (optarg, "illumina")) qualtype = ILLUMINA;
-				else if (!strcmp (optarg, "phred")) qualtype = PHRED;
 				else if (!strcmp (optarg, "solexa")) qualtype = SOLEXA;
 				else if (!strcmp (optarg, "sanger")) qualtype = SANGER;
 				else {
