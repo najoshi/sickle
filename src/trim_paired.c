@@ -36,7 +36,10 @@ static struct option paired_long_options[] = {
 
 void paired_usage (int status) {
 
+  fprintf(stderr, "\nIf your have separate files for forward and reverse reads...\n");
 	fprintf (stderr, "\nUsage: %s pe -f <paired-end fastq file 1> -r <paired-end fastq file 2> -t <quality type> -o <trimmed pe file 1> -p <trimmed pe file 2> -s <trimmed singles file>\n",PROGRAM_NAME);
+  fprintf(stderr, "\nIf your have one file with interleaved forward and reverse reads...\n");
+	fprintf (stderr, "\nUsage: %s pe -c <combined input file> -t <quality type> -m <combined trimmed output> -s <trimmed singles file>\n",PROGRAM_NAME);
   fprintf (stderr, "\n Options:\n\
 -t, --qual-type, Type of quality values (solexa (CASAVA < 1.3), illumina (CASAVA 1.3 to 1.7), sanger (which is CASAVA >= 1.8)) (required)\n\
 -f, --pe-file1, Input paired-end fastq file 1 (optional, must have same number of records as pe2)\n\
@@ -67,7 +70,6 @@ int paired_main (int argc, char *argv[]) {
 	gzFile pec=NULL;        /* combined input file handle */
 	kseq_t *fqrec1 = NULL;
 	kseq_t *fqrec2 = NULL;
-	kseq_t *fqrecc = NULL;
 	int l1,l2;
 	FILE *outfile1=NULL;    /* forward output file handle */
 	FILE *outfile2=NULL;    /* reverse output file handle */
@@ -207,55 +209,24 @@ int paired_main (int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
-  /* check for duplicate file names */
-  if (infnc) {
+  /* make sure minimum input filenames are specified*/
+  if (!infn1 && !infn2 && !infnc) {
+    fprintf (stderr, "Error: Must have either -f and -r OR -c arguments.\n");
+    paired_usage(EXIT_FAILURE);
+  }
+
+  if (infnc) { /* using combined input file */
+    fprintf(stderr,"COMBO\n");
+    /* check for duplicate file names */
     if (!strcmp (infnc, outfnc) || !strcmp (infnc, sfn) || !strcmp (outfnc, sfn)) {
       fprintf (stderr, "Error: Duplicate filename between combo input, combo output, and/or single output file names.\n");
       return EXIT_FAILURE;
     }
-  } else {
-    if (!strcmp (infn1, infn2) || !strcmp (infn1, outfn1) || !strcmp (infn1, outfn2) ||
-      !strcmp (infn1, sfn) || !strcmp (infn2, outfn1) || !strcmp (infn2, outfn2) ||
-      !strcmp (infn2, sfn) || !strcmp (outfn1, outfn2) || !strcmp (outfn1, sfn) ||
-      !strcmp (outfn2, sfn)) {
-
-      fprintf (stderr, "Error: Duplicate input and/or output file names.\n");
-      return EXIT_FAILURE;
+    /* make sure minimum input filenames are specified*/
+    if (!infn1 && !infn2 && !infnc) {
+      fprintf (stderr, "Error: Must have either -f and -r OR -c arguments.\n");
+      paired_usage(EXIT_FAILURE);
     }
-  }
-
-  /* make sure minimum input filenames are specified*/
-  if (!infn1 && !infn2 && !infnc) {
-		fprintf (stderr, "Error: Must have either -f and -r OR -c arguments.\n");
-		paired_usage(EXIT_FAILURE);
-  }
-
-  /* get singles output file handle*/
-  single = fopen (sfn, "w");
-  if (!single) {
-    fprintf (stderr, "Could not open single output file '%s'.\n", sfn);
-    return EXIT_FAILURE;
-  }
-
-  if (!infnc) {
-    if ( (infn1 && !infn2) || (infn2 && !infn1)) {
-      fprintf (stderr, "Error: Must have both -f and -r arguments if using forward and reverse files.\n");
-      return EXIT_FAILURE;
-    }
-
-    if (!outfn1 && !outfn2) {
-      fprintf (stderr, "Error: Must have -o and -p if using separate forward and reverse files.\n");
-      return EXIT_FAILURE;
-    }
-
-    if ( (outfn1 && !outfn2) || (outfn2 && !outfn1)) {
-      fprintf (stderr, "Error: Must have both -o and -p arguments if using forward and reverse files.\n");
-      return EXIT_FAILURE;
-    }
-  }
-
-  if (infnc) /* using combined input file */
-  { 
     if (infn1 || infn2) {
       fprintf (stderr, "Cannot have both the -c option for combined input and either -f or -r\n");
       return EXIT_FAILURE;
@@ -272,17 +243,36 @@ int paired_main (int argc, char *argv[]) {
       return EXIT_FAILURE;
     }
 
-    /* get input */
-    /* pec_fd = fopen(infnc, "r");*/
-
     pec = gzopen(infnc,"r");
     if (!pec) {
       fprintf (stderr, "Could not open combined input file '%s'.\n", infnc);
       return EXIT_FAILURE;
     }
-  }
-  else /* using forward and reverse input files */
-  {
+  } else { /* using forward and reverse input files */
+    if ( (infn1 && !infn2) || (infn2 && !infn1)) {
+      fprintf (stderr, "Error: Must have both -f and -r arguments if using forward and reverse files.\n");
+      return EXIT_FAILURE;
+    }
+
+    if (!outfn1 && !outfn2) {
+      fprintf (stderr, "Error: Must have -o and -p if using separate forward and reverse files.\n");
+      return EXIT_FAILURE;
+    }
+
+    if ( (outfn1 && !outfn2) || (outfn2 && !outfn1)) {
+      fprintf (stderr, "Error: Must have both -o and -p arguments if using forward and reverse files.\n");
+      return EXIT_FAILURE;
+    }
+
+    if (!strcmp (infn1, infn2) || !strcmp (infn1, outfn1) || !strcmp (infn1, outfn2) ||
+      !strcmp (infn1, sfn) || !strcmp (infn2, outfn1) || !strcmp (infn2, outfn2) ||
+      !strcmp (infn2, sfn) || !strcmp (outfn1, outfn2) || !strcmp (outfn1, sfn) ||
+      !strcmp (outfn2, sfn)) {
+
+      fprintf (stderr, "Error: Duplicate input and/or output file names.\n");
+      return EXIT_FAILURE;
+    }
+ 
     pe1 = gzopen (infn1, "r");
     if (!pe1) {
       fprintf (stderr, "Could not open input file '%s'.\n", infn1);
@@ -308,30 +298,43 @@ int paired_main (int argc, char *argv[]) {
     }
   }
 
+  /* get singles output file handle*/
+  single = fopen (sfn, "w");
+  if (!single) {
+    fprintf (stderr, "Could not open single output file '%s'.\n", sfn);
+    return EXIT_FAILURE;
+  }
 
-  /* if using combo input, ... */
-  if (pec) { /* combined input file */
+  if (pec) {
     fqrec1 = kseq_init (pec);
     fqrec2 = (kseq_t *) malloc(sizeof(kseq_t));
     fqrec2->f = fqrec1->f;
-    while ((l1 = kseq_read (fqrec1)) >= 0) {
-      fprintf(stderr, "1: (%p) %s\n", fqrec1->name.s,fqrec1->name.s);
-      fprintf(stderr, "%i: read %s : %s\n", l1,fqrec1->name.s,fqrec1->seq.s);
+  } else {
+    fqrec1 = kseq_init (pe1);
+    fqrec2 = kseq_init (pe2);
+  }
 
-      l2 = kseq_read (fqrec2);
-      fprintf(stderr, "2: (%p) %s\n", fqrec2->name.s,fqrec2->name.s);
-      fprintf(stderr, "%i: read %s : %s\n", l2,fqrec2->name.s,fqrec2->seq.s);
+  while ((l1 = kseq_read (fqrec1)) >= 0) {
 
-      p1cut = sliding_window (fqrec1, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, discard_n);
-      p2cut = sliding_window (fqrec2, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, discard_n);
+    l2 = kseq_read (fqrec2);
+    if (l2 < 0) {
+      fprintf (stderr, "Error: PE file 2 is shorter than PE file 1. Disregarding rest of PE file 1.\n");
+      break;
+    }
 
-      fprintf(stderr, "%s p1: %d %d   %s p2: %d %d\n",fqrec1->name.s, p1cut->five_prime_cut, p1cut->three_prime_cut,
-                                                      fqrec2->name.s, p2cut->five_prime_cut, p2cut->three_prime_cut);
-     
-      if (p1cut->three_prime_cut >= 0 && p2cut->three_prime_cut >= 0) {
-        fprintf (combo, "@%s", fqrec1->name.s); /* header_id */
-        if (fqrec1->comment.l) fprintf (combo, " %s\n", fqrec1->comment.s); /* comment after header_id */
-        else fprintf (combo, "\n"); /* no comment */
+    p1cut = sliding_window (fqrec1, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, discard_n);
+    p2cut = sliding_window (fqrec2, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, discard_n);
+
+    /* The sequence and quality print statements below print out the sequence string starting from the 5' cut */
+    /* and then only print out to the 3' cut, however, we need to adjust the 3' cut */
+    /* by subtracting the 5' cut because the 3' cut was calculated on the original sequence */
+
+    /* if both sequences passed quality and length filters, then output both records */
+    if (p1cut->three_prime_cut >= 0 && p2cut->three_prime_cut >= 0) {
+      if (pec) {
+        fprintf (combo, "@%s", fqrec1->name.s);
+        if (fqrec1->comment.l) fprintf (combo, " %s\n", fqrec1->comment.s);
+        else fprintf (combo, "\n");
         fprintf (combo, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec1->seq.s + p1cut->five_prime_cut);
         fprintf (combo, "+\n");
         fprintf (combo, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec1->qual.s + p1cut->five_prime_cut);
@@ -341,65 +344,7 @@ int paired_main (int argc, char *argv[]) {
         fprintf (combo, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->seq.s + p2cut->five_prime_cut);
         fprintf (combo, "+\n");
         fprintf (combo, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->qual.s + p2cut->five_prime_cut);
-
-        kept_p += 2;
-      }
-
-      /* if only one sequence passed filter, then put its record in singles and discard the other */
-      else if (p1cut->three_prime_cut >= 0 && p2cut->three_prime_cut < 0) {
-        fprintf (single, "@%s", fqrec1->name.s);
-        if (fqrec1->comment.l) fprintf (single, " %s\n", fqrec1->comment.s);
-        else fprintf (single, "\n");
-        fprintf (single, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec1->seq.s + p1cut->five_prime_cut);
-
-        fprintf (single, "+\n");
-        fprintf (single, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec1->qual.s + p1cut->five_prime_cut);
-
-        kept_s1++;
-        discard_s2++;
-      }
-
-      else if (p1cut->three_prime_cut < 0 && p2cut->three_prime_cut >= 0) {
-        fprintf (single, "@%s", fqrec2->name.s);
-        if (fqrec2->comment.l) fprintf (single, " %s\n", fqrec2->comment.s);
-        else fprintf (single, "\n");
-        fprintf (single, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->seq.s + p2cut->five_prime_cut);
-
-        fprintf (single, "+\n");
-        fprintf (single, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->qual.s + p2cut->five_prime_cut);
-
-        kept_s2++;
-        discard_s1++;
-      }
-
-      else discard_p += 2;
-
-      free(p1cut);
-      free(p2cut);
-    } /* end of while ((l1 = kseq_read (fqrec1)) >= 0) */
-  } else {
-    /* 2 input files */
-    fqrec1 = kseq_init (pe1);
-    fqrec2 = kseq_init (pe2);
-
-    while ((l1 = kseq_read (fqrec1)) >= 0) {
-
-      l2 = kseq_read (fqrec2);
-      if (l2 < 0) {
-        fprintf (stderr, "Error: PE file 2 is shorter than PE file 1. Disregarding rest of PE file 1.\n");
-        break;
-      }
-
-      p1cut = sliding_window (fqrec1, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, discard_n);
-      p2cut = sliding_window (fqrec2, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, discard_n);
-      fprintf(stderr, "%s p1: %d %d   %s p2: %d %d\n", fqrec1->name.s,p1cut->five_prime_cut, p1cut->three_prime_cut, fqrec1->name.s,p2cut->five_prime_cut, p2cut->three_prime_cut);
-
-      /* The sequence and quality print statements below print out the sequence string starting from the 5' cut */
-      /* and then only print out to the 3' cut, however, we need to adjust the 3' cut */
-      /* by subtracting the 5' cut because the 3' cut was calculated on the original sequence */
-
-      /* if both sequences passed quality and length filters, then output both records */
-      if (p1cut->three_prime_cut >= 0 && p2cut->three_prime_cut >= 0) {
+      } else {
         fprintf (outfile1, "@%s", fqrec1->name.s);
         if (fqrec1->comment.l) fprintf (outfile1, " %s\n", fqrec1->comment.s);
         else fprintf (outfile1, "\n");
@@ -412,48 +357,48 @@ int paired_main (int argc, char *argv[]) {
         fprintf (outfile2, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->seq.s + p2cut->five_prime_cut);
         fprintf (outfile2, "+\n");
         fprintf (outfile2, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->qual.s + p2cut->five_prime_cut);
-
-        kept_p += 2;
       }
 
-      /* if only one sequence passed filter, then put its record in singles and discard the other */
-      else if (p1cut->three_prime_cut >= 0 && p2cut->three_prime_cut < 0) {
-        fprintf (single, "@%s", fqrec1->name.s);
-        if (fqrec1->comment.l) fprintf (single, " %s\n", fqrec1->comment.s);
-        else fprintf (single, "\n");
-        fprintf (single, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec1->seq.s + p1cut->five_prime_cut);
+      kept_p += 2;
+    }
 
-        fprintf (single, "+\n");
-        fprintf (single, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec1->qual.s + p1cut->five_prime_cut);
+    /* if only one sequence passed filter, then put its record in singles and discard the other */
+    else if (p1cut->three_prime_cut >= 0 && p2cut->three_prime_cut < 0) {
+      fprintf (single, "@%s", fqrec1->name.s);
+      if (fqrec1->comment.l) fprintf (single, " %s\n", fqrec1->comment.s);
+      else fprintf (single, "\n");
+      fprintf (single, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec1->seq.s + p1cut->five_prime_cut);
 
-        kept_s1++;
-        discard_s2++;
-      }
+      fprintf (single, "+\n");
+      fprintf (single, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec1->qual.s + p1cut->five_prime_cut);
 
-      else if (p1cut->three_prime_cut < 0 && p2cut->three_prime_cut >= 0) {
-        fprintf (single, "@%s", fqrec2->name.s);
-        if (fqrec2->comment.l) fprintf (single, " %s\n", fqrec2->comment.s);
-        else fprintf (single, "\n");
-        fprintf (single, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->seq.s + p2cut->five_prime_cut);
+      kept_s1++;
+      discard_s2++;
+    }
 
-        fprintf (single, "+\n");
-        fprintf (single, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->qual.s + p2cut->five_prime_cut);
+    else if (p1cut->three_prime_cut < 0 && p2cut->three_prime_cut >= 0) {
+      fprintf (single, "@%s", fqrec2->name.s);
+      if (fqrec2->comment.l) fprintf (single, " %s\n", fqrec2->comment.s);
+      else fprintf (single, "\n");
+      fprintf (single, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->seq.s + p2cut->five_prime_cut);
 
-        kept_s2++;
-        discard_s1++;
-      }
+      fprintf (single, "+\n");
+      fprintf (single, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->qual.s + p2cut->five_prime_cut);
 
-      else discard_p += 2;
+      kept_s2++;
+      discard_s1++;
+    }
 
-      free(p1cut);
-      free(p2cut);
-    } /* end of while ((l1 = kseq_read (fqrec1)) >= 0) */
+    else discard_p += 2;
 
-    if (l1 < 0) {
-      l2 = kseq_read (fqrec2);
-      if (l2 >= 0) {
-        fprintf (stderr, "Error: PE file 1 is shorter than PE file 2. Disregarding rest of PE file 2.\n");
-      }
+    free(p1cut);
+    free(p2cut);
+  } /* end of while ((l1 = kseq_read (fqrec1)) >= 0) */
+
+  if (l1 < 0) {
+    l2 = kseq_read (fqrec2);
+    if (l2 >= 0) {
+      fprintf (stderr, "Error: PE file 1 is shorter than PE file 2. Disregarding rest of PE file 2.\n");
     }
   }
 
@@ -475,7 +420,9 @@ int paired_main (int argc, char *argv[]) {
   }
 
 	kseq_destroy (fqrec1);
-  if (!pec) {
+  if (pec) {
+    free(fqrec2);
+  } else {
     kseq_destroy (fqrec2);
   }
 	fclose (single);
