@@ -5,30 +5,31 @@
 #include <stdio.h>
 #include <getopt.h>
 #include <unistd.h>
+#include <pthread.h>
+#include <string.h>
 #include "sickle.h"
-#include "kseq.h"
-
-__KS_GETC(gzread, BUFFER_SIZE)
-__KS_GETUNTIL(gzread, BUFFER_SIZE)
-__KSEQ_READ
 
 int paired_qual_threshold = 20;
 int paired_length_threshold = 20;
+int num_threads_paired = 1;
+pthread_t *threads=NULL;
+
+swdata *global_swd;
+int waitnum;
 
 static struct option paired_long_options[] = {
 	{"qual-type", required_argument, 0, 't'},
-	{"pe-file1", optional_argument, 0, 'f'},
-	{"pe-file2", optional_argument, 0, 'r'},
-	{"pe-combo", optional_argument, 0, 'c'},
-	{"output-pe1", optional_argument, 0, 'o'},
-	{"output-pe2", optional_argument, 0, 'p'},
+	{"pe-file1", required_argument, 0, 'f'},
+	{"pe-file2", required_argument, 0, 'r'},
+	{"output-pe1", required_argument, 0, 'o'},
+	{"output-pe2", required_argument, 0, 'p'},
 	{"output-single", required_argument, 0, 's'},
-	{"output-combo", optional_argument, 0, 'm'},
 	{"qual-threshold", optional_argument, 0, 'q'},
 	{"length-threshold", optional_argument, 0, 'l'},
 	{"no-fiveprime", optional_argument, 0, 'x'},
 	{"discard-n", optional_argument, 0, 'n'},
 	{"quiet", optional_argument, 0, 'z'},
+    {"num-threads", optional_argument, 0, 'u'},
 	{GETOPT_HELP_OPTION_DECL},
 	{GETOPT_VERSION_OPTION_DECL},
 	{NULL, 0, NULL, 0}
@@ -56,7 +57,8 @@ void paired_usage (int status) {
 -n, --discard-n, Discard sequences with any Ns in them.\n");
 
 
-	fprintf (stderr, "--quiet, do not output trimming info\n\
+	fprintf (stderr, "-u, --num-threads, number of threads to use (default 1)\n\
+--quiet, do not output trimming info\n\
 --help, display this help and exit\n\
 --version, output version information and exit\n\n");
 
@@ -65,12 +67,9 @@ void paired_usage (int status) {
 
 int paired_main (int argc, char *argv[]) {
 
-	gzFile pe1=NULL;        /* forward input file handle */
-	gzFile pe2=NULL;        /* reverse input file handle */
+	FILE *pe1=NULL;        /* forward input file handle */
+	FILE *pe2=NULL;        /* reverse input file handle */
 	gzFile pec=NULL;        /* combined input file handle */
-	kseq_t *fqrec1 = NULL;
-	kseq_t *fqrec2 = NULL;
-	int l1,l2;
 	FILE *outfile1=NULL;    /* forward output file handle */
 	FILE *outfile2=NULL;    /* reverse output file handle */
 	FILE *combo=NULL;       /* combined output file handle */
@@ -79,8 +78,6 @@ int paired_main (int argc, char *argv[]) {
 	int optc;
 	extern char *optarg;
 	int qualtype=-1;
-	cutsites* p1cut;
-	cutsites* p2cut;
 	char *outfn1=NULL;      /* forward file out name */
 	char *outfn2=NULL;      /* reverse file out name */
 	char *outfnc=NULL;      /* combined file out name */
@@ -97,10 +94,14 @@ int paired_main (int argc, char *argv[]) {
 	int quiet=0;
 	int no_fiveprime=0;
 	int discard_n=0;
+    int i=0;
+    int *tids;
+    waitnum = 0;
+
 
 	while (1) {
 		int option_index = 0;
-		optc = getopt_long (argc, argv, "df:r:c:t:o:p:m:s:q:l:xn", paired_long_options, &option_index);
+		optc = getopt_long (argc, argv, "df:r:t:o:p:s:q:l:u:xn", paired_long_options, &option_index);
 
 		if (optc == -1) break;
 
@@ -115,11 +116,6 @@ int paired_main (int argc, char *argv[]) {
 			case 'r':
 				infn2 = (char*) malloc (strlen (optarg) + 1);
 				strcpy (infn2, optarg);
-				break;
-
-      case 'c':
-				infnc = (char*) malloc (strlen (optarg) + 1);
-				strcpy (infnc, optarg);
 				break;
 
 			case 't':
@@ -142,11 +138,6 @@ int paired_main (int argc, char *argv[]) {
 				strcpy (outfn2, optarg);
 				break;
 
-			case 'm':
-				outfnc = (char*) malloc (strlen (optarg) + 1);
-				strcpy (outfnc, optarg);
-				break;
-
 			case 's':
 				sfn = (char*) malloc (strlen (optarg) + 1);
 				strcpy (sfn, optarg);
@@ -156,6 +147,14 @@ int paired_main (int argc, char *argv[]) {
 				paired_qual_threshold = atoi (optarg);
 				if (paired_qual_threshold < 0) {
 					fprintf (stderr, "Quality threshold must be >= 0\n");
+					return EXIT_FAILURE;
+				}
+				break;
+
+			case 'u':
+				num_threads_paired = atoi (optarg);
+				if (num_threads_paired <= 0) {
+					fprintf (stderr, "Number of threads must be > 0\n");
 					return EXIT_FAILURE;
 				}
 				break;
@@ -199,14 +198,14 @@ int paired_main (int argc, char *argv[]) {
 
   /* required: qualtype */
 	if (qualtype == -1) {
-    fprintf (stderr, "Error: Quality type (-t) is required.\n");
-		return EXIT_FAILURE;
+        fprintf (stderr, "Error: Quality type (-t) is required.\n");
+        paired_usage (EXIT_FAILURE);
 	}
 
   /* required: singlton filename */
 	if (!sfn) {
-    fprintf (stderr, "Error: Single read filename (-s) is required.\n");
-		return EXIT_FAILURE;
+        fprintf (stderr, "Error: Single read filename (-s) is required.\n");
+        paired_usage (EXIT_FAILURE);
 	}
 
   /* make sure minimum input filenames are specified*/
@@ -273,13 +272,13 @@ int paired_main (int argc, char *argv[]) {
       return EXIT_FAILURE;
     }
  
-    pe1 = gzopen (infn1, "r");
+    pe1 = fopen (infn1, "r");
     if (!pe1) {
       fprintf (stderr, "Could not open input file '%s'.\n", infn1);
       return EXIT_FAILURE;
     }
 
-    pe2 = gzopen (infn2, "r");
+    pe2 = fopen (infn2, "r");
     if (!pe2) {
       fprintf (stderr, "Could not open input file '%s'.\n", infn2);
       return EXIT_FAILURE;
@@ -305,46 +304,63 @@ int paired_main (int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  if (pec) {
-    fqrec1 = kseq_init (pec);
-    fqrec2 = (kseq_t *) malloc(sizeof(kseq_t));
-    fqrec2->f = fqrec1->f;
-  } else {
-    fqrec1 = kseq_init (pe1);
-    fqrec2 = kseq_init (pe2);
+/* printf ("Got here\n"); */
+
+  threads = malloc (sizeof(pthread_t) * num_threads_paired);
+  global_swd = malloc (sizeof(swdata) * num_threads_paired);
+  tids = malloc (sizeof(int) * num_threads_paired);
+
+/* printf ("Got here2\n"); */
+
+  for (i=0; i<num_threads_paired; i++) {
+
+/* printf ("Got here3\n"); */
+
+      global_swd[i].fqrec_r1 = get_fq_record (pe1);
+      global_swd[i].fqrec_r2 = get_fq_record (pe2);
+
+/* printf ("Got here3.5: %s\n", global_swd[i].fqrec_r1->seq); */
+
+      global_swd[i].qualtype = qualtype;
+      global_swd[i].length_threshold = paired_length_threshold;
+      global_swd[i].qual_threshold = paired_qual_threshold;
+      global_swd[i].no_fiveprime = no_fiveprime;
+      global_swd[i].discard_n = discard_n;
+
+/* printf ("Got here4: %d\n", global_swd[i].length_threshold); */
   }
 
-  while ((l1 = kseq_read (fqrec1)) >= 0) {
+  for (i=0; i<num_threads_paired; i++) {
+/* printf ("about to call create: %d\n", i); */
+      tids[i] = i;
+      pthread_create (&threads[i], NULL, &sw_call, &tids[i]);
+  }
 
-    l2 = kseq_read (fqrec2);
-    if (l2 < 0) {
-      fprintf (stderr, "Error: PE file 2 is shorter than PE file 1. Disregarding rest of PE file 1.\n");
-      break;
-    }
+/* printf ("Got here5\n"); */
 
-    p1cut = sliding_window (fqrec1, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, discard_n);
-    p2cut = sliding_window (fqrec2, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, discard_n);
+  while (1) {
+
+/* printf ("ABOUT TO WAIT on thread %d\n", waitnum); */
+
+    pthread_join (threads[waitnum], NULL);
 
     /* The sequence and quality print statements below print out the sequence string starting from the 5' cut */
     /* and then only print out to the 3' cut, however, we need to adjust the 3' cut */
     /* by subtracting the 5' cut because the 3' cut was calculated on the original sequence */
 
     /* if both sequences passed quality and length filters, then output both records */
-    if (p1cut->three_prime_cut >= 0 && p2cut->three_prime_cut >= 0) {
-      if (pec) {
-        fprintf (combo, "@%s", fqrec1->name.s);
-        if (fqrec1->comment.l) fprintf (combo, " %s\n", fqrec1->comment.s);
-        else fprintf (combo, "\n");
-        fprintf (combo, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec1->seq.s + p1cut->five_prime_cut);
-        fprintf (combo, "+\n");
-        fprintf (combo, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec1->qual.s + p1cut->five_prime_cut);
-        fprintf (combo, "@%s", fqrec2->name.s);
-        if (fqrec2->comment.l) fprintf (combo, " %s\n", fqrec2->comment.s);
-        else fprintf (combo, "\n");
-        fprintf (combo, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->seq.s + p2cut->five_prime_cut);
-        fprintf (combo, "+\n");
-        fprintf (combo, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->qual.s + p2cut->five_prime_cut);
-      } else {
+    if (global_swd[waitnum].three_prime_cut_r1 >= 0 && global_swd[waitnum].three_prime_cut_r2 >= 0) {
+
+        fprintf (outfile1, "%s", global_swd[waitnum].fqrec_r1->h1);
+        fprintf (outfile1, "%.*s\n", global_swd[waitnum].three_prime_cut_r1 - global_swd[waitnum].five_prime_cut_r1, global_swd[waitnum].fqrec_r1->seq + global_swd[waitnum].five_prime_cut_r1);
+        fprintf (outfile1, "+\n");
+        fprintf (outfile1, "%.*s\n", global_swd[waitnum].three_prime_cut_r1 - global_swd[waitnum].five_prime_cut_r1, global_swd[waitnum].fqrec_r1->qual + global_swd[waitnum].five_prime_cut_r1);
+
+        fprintf (outfile2, "%s", global_swd[waitnum].fqrec_r2->h1);
+        fprintf (outfile2, "%.*s\n", global_swd[waitnum].three_prime_cut_r2 - global_swd[waitnum].five_prime_cut_r2, global_swd[waitnum].fqrec_r2->seq + global_swd[waitnum].five_prime_cut_r2);
+        fprintf (outfile2, "+\n");
+        fprintf (outfile2, "%.*s\n", global_swd[waitnum].three_prime_cut_r2 - global_swd[waitnum].five_prime_cut_r2, global_swd[waitnum].fqrec_r2->qual + global_swd[waitnum].five_prime_cut_r2);
+/*
         fprintf (outfile1, "@%s", fqrec1->name.s);
         if (fqrec1->comment.l) fprintf (outfile1, " %s\n", fqrec1->comment.s);
         else fprintf (outfile1, "\n");
@@ -357,50 +373,44 @@ int paired_main (int argc, char *argv[]) {
         fprintf (outfile2, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->seq.s + p2cut->five_prime_cut);
         fprintf (outfile2, "+\n");
         fprintf (outfile2, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->qual.s + p2cut->five_prime_cut);
-      }
-
-      kept_p += 2;
+*/
+        kept_p += 2;
     }
 
     /* if only one sequence passed filter, then put its record in singles and discard the other */
-    else if (p1cut->three_prime_cut >= 0 && p2cut->three_prime_cut < 0) {
-      fprintf (single, "@%s", fqrec1->name.s);
-      if (fqrec1->comment.l) fprintf (single, " %s\n", fqrec1->comment.s);
-      else fprintf (single, "\n");
-      fprintf (single, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec1->seq.s + p1cut->five_prime_cut);
+    else if (global_swd[waitnum].three_prime_cut_r1 >= 0 && global_swd[waitnum].three_prime_cut_r2 < 0) {
 
-      fprintf (single, "+\n");
-      fprintf (single, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec1->qual.s + p1cut->five_prime_cut);
-
-      kept_s1++;
-      discard_s2++;
+        fprintf (single, "%s", global_swd[waitnum].fqrec_r1->h1);
+        fprintf (single, "%.*s\n", global_swd[waitnum].three_prime_cut_r1 - global_swd[waitnum].five_prime_cut_r1, global_swd[waitnum].fqrec_r1->seq + global_swd[waitnum].five_prime_cut_r1);
+        fprintf (single, "+\n");
+        fprintf (single, "%.*s\n", global_swd[waitnum].three_prime_cut_r1 - global_swd[waitnum].five_prime_cut_r1, global_swd[waitnum].fqrec_r1->qual + global_swd[waitnum].five_prime_cut_r1);
     }
 
-    else if (p1cut->three_prime_cut < 0 && p2cut->three_prime_cut >= 0) {
-      fprintf (single, "@%s", fqrec2->name.s);
-      if (fqrec2->comment.l) fprintf (single, " %s\n", fqrec2->comment.s);
-      else fprintf (single, "\n");
-      fprintf (single, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->seq.s + p2cut->five_prime_cut);
+    else if (global_swd[waitnum].three_prime_cut_r1 < 0 && global_swd[waitnum].three_prime_cut_r2 >= 0) {
 
-      fprintf (single, "+\n");
-      fprintf (single, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->qual.s + p2cut->five_prime_cut);
-
-      kept_s2++;
-      discard_s1++;
+        fprintf (single, "%s", global_swd[waitnum].fqrec_r2->h1);
+        fprintf (single, "%.*s\n", global_swd[waitnum].three_prime_cut_r2 - global_swd[waitnum].five_prime_cut_r2, global_swd[waitnum].fqrec_r2->seq + global_swd[waitnum].five_prime_cut_r2);
+        fprintf (single, "+\n");
+        fprintf (single, "%.*s\n", global_swd[waitnum].three_prime_cut_r2 - global_swd[waitnum].five_prime_cut_r2, global_swd[waitnum].fqrec_r2->qual + global_swd[waitnum].five_prime_cut_r2);
     }
 
     else discard_p += 2;
 
-    free(p1cut);
-    free(p2cut);
-  } /* end of while ((l1 = kseq_read (fqrec1)) >= 0) */
+    free (global_swd[waitnum].fqrec_r1);
+    free (global_swd[waitnum].fqrec_r2);
 
-  if (l1 < 0) {
-    l2 = kseq_read (fqrec2);
-    if (l2 >= 0) {
-      fprintf (stderr, "Error: PE file 1 is shorter than PE file 2. Disregarding rest of PE file 2.\n");
-    }
-  }
+    global_swd[waitnum].fqrec_r1 = get_fq_record (pe1);
+    global_swd[waitnum].fqrec_r2 = get_fq_record (pe2);
+
+    if (global_swd[waitnum].fqrec_r1 == NULL) {break;}
+
+/* printf ("about to call create again with waitnum %d\n", waitnum); */
+    tids[waitnum] = waitnum;
+    pthread_create (&threads[waitnum], NULL, &sw_call, &tids[waitnum]);
+
+    waitnum = (waitnum + 1) % num_threads_paired;
+
+  } /* end of while(1) */
 
 	if (!quiet) {
     fprintf (stdout, "\nFastQ paired records kept: %d (%d pairs)\n",kept_p, (kept_p/2));
@@ -419,21 +429,10 @@ int paired_main (int argc, char *argv[]) {
     }
   }
 
-	kseq_destroy (fqrec1);
-  if (pec) {
-    free(fqrec2);
-  } else {
-    kseq_destroy (fqrec2);
-  }
-	fclose (single);
-  if (pec) {
-    gzclose (pec);
-    fclose (combo);
-  } else {
-    gzclose (pe1);
-    gzclose (pe2);
+    fclose (single);
+    fclose (pe1);
+    fclose (pe2);
     fclose (outfile1);
     fclose (outfile2);
-  }
 	return EXIT_SUCCESS;
 } /* end of paired_main() */

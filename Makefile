@@ -5,7 +5,7 @@ CFLAGS = -Wall -pedantic -DVERSION=$(VERSION)
 DEBUG = -g
 OPT = -O3
 ARCHIVE = $(PROGRAM_NAME)_$(VERSION)
-LDFLAGS = -lz
+LDFLAGS = -lz -lpthread
 SDIR = src
 
 .PHONY: clean default build distclean dist debug
@@ -34,8 +34,8 @@ dist:
 	tar -zcf $(ARCHIVE).tar.gz src Makefile
 
 build: sliding.o trim_single.o trim_paired.o sickle.o
-	$(CC) $(CFLAGS) $(LDFLAGS) $(OPT) $? -o sickle
+	$(CC) $(CFLAGS) $? $(LDFLAGS) $(OPT) -o sickle
 
-debug:
-	$(MAKE) build "CFLAGS=-Wall -pedantic -g -DDEBUG"
+debug: sliding.o trim_single.o trim_paired.o sickle.o
+	$(CC) $(CFLAGS) $(LDFLAGS) $(DEBUG) $? -o sickle
 

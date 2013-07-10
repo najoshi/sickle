@@ -3,25 +3,7 @@
 
 #include <limits.h>
 #include <zlib.h>
-#include "kseq.h"
 
-
-/* KSEQ_INIT() cannot be called here, because we only need the types
-   defined. Calling KSEQ_INIT() would also define functions, leading
-   to an unused function warning with GCC. So, the basic typedefs
-   kseq.h has are included here, and each file that reads needs:
-
-   __KS_GETC(gzread, BUFFER_SIZE)
-   __KS_GETUNTIL(gzread, BUFFER_SIZE)
-   __KSEQ_READ
-
-*/
-
-#define BUFFER_SIZE 4096
-__KS_TYPE(gzFile)
-__KS_BASIC(gzFile, BUFFER_SIZE)
-__KSEQ_TYPE(gzFile)
-__KSEQ_BASIC(gzFile)
 
 #ifndef PROGRAM_NAME
 #define PROGRAM_NAME "sickle"
@@ -92,10 +74,37 @@ typedef struct __cutsites_ {
 	int three_prime_cut;
 } cutsites;
 
+typedef struct __fqrec__ {
+    char* h1;
+    char* seq;
+    char* h2;
+    char* qual;
+    int seqlen;
+    int qlen;
+} fqrec;
+
+typedef struct __swdata__ {
+    fqrec *fqrec_r1;
+    fqrec *fqrec_r2;
+    int qualtype;
+    int length_threshold;
+    int qual_threshold;
+    int no_fiveprime;
+    int discard_n;
+    int five_prime_cut_r1;
+    int three_prime_cut_r1;
+    int five_prime_cut_r2;
+    int three_prime_cut_r2;
+} swdata;
+
+extern swdata *global_swd;
+extern int waitnum;
 
 /* Function Prototypes */
 int single_main (int argc, char *argv[]);
 int paired_main (int argc, char *argv[]);
-cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int qual_threshold, int no_fiveprime, int discard_n);
+void sliding_window (fqrec *fqrec, int qualtype, int length_threshold, int qual_threshold, int no_fiveprime, int discard_n, int *five_prime_cut, int *three_prime_cut);
+void* sw_call (void *tn);
+fqrec* get_fq_record (FILE *fp);
 
 #endif /*SICKLE_H*/

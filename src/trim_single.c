@@ -4,15 +4,13 @@
 #include <zlib.h>
 #include <stdio.h>
 #include <getopt.h>
+#include <pthread.h>
+#include <string.h>
 #include "sickle.h"
-#include "kseq.h"
-
-__KS_GETC(gzread, BUFFER_SIZE)
-__KS_GETUNTIL(gzread, BUFFER_SIZE)
-__KSEQ_READ
 
 int single_qual_threshold = 20;
 int single_length_threshold = 20;
+int num_threads_single = 1;
 
 static struct option single_long_options[] = {
   {"fastq-file", required_argument, 0, 'f'},
@@ -23,6 +21,7 @@ static struct option single_long_options[] = {
   {"no-fiveprime", optional_argument, 0, 'x'},
   {"discard-n", optional_argument, 0, 'n'},
   {"quiet", optional_argument, 0, 'z'},
+  {"num-threads", optional_argument, 0, 'u'},
   {GETOPT_HELP_OPTION_DECL},
   {GETOPT_VERSION_OPTION_DECL},
   {NULL, 0, NULL, 0}
@@ -41,7 +40,9 @@ Options:\n\
 -l, --length-threshold, Threshold to keep a read based on length after trimming. Default 20.\n\
 -x, --no-fiveprime, Don't do five prime trimming.\n\
 -n, --discard-n, Discard sequences with any Ns in them.\n\
---quiet, Don't print out any trimming information\n\
+-u, --num-threads, number of threads to use (default 1)\n");
+
+fprintf (stderr, "--quiet, Don't print out any trimming information\n\
 --help, display this help and exit\n\
 --version, output version information and exit\n\n");
 
@@ -50,15 +51,12 @@ Options:\n\
 
 int single_main (int argc, char *argv[]) {
 
-	gzFile se=NULL;
-	kseq_t *fqrec;
-	int l;
+	FILE *se=NULL;
 	FILE *outfile=NULL;
 	int debug=0;
 	int optc;
 	extern char *optarg;
 	int qualtype=-1;
-	cutsites* p1cut;
 	char *outfn=NULL;
 	char *infn=NULL;
 	int kept=0;
@@ -66,6 +64,9 @@ int single_main (int argc, char *argv[]) {
 	int quiet=0;
 	int no_fiveprime=0;
 	int discard_n=0;
+    int i=0;
+    pthread_t *threads=NULL;
+    int waitnum = 0;
 
 	while (1) {
 		int option_index = 0;
@@ -120,6 +121,13 @@ int single_main (int argc, char *argv[]) {
 				discard_n = 1;
 				break;
 
+            case 'u':
+                num_threads_single = atoi (optarg);
+                if (num_threads_single <= 0) {
+                    fprintf (stderr, "Number of threads must be > 0\n");
+                    return EXIT_FAILURE;
+                }
+
 			case 'z':
 				quiet=1;
 				break;
@@ -151,7 +159,7 @@ int single_main (int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	se = gzopen (infn, "r");
+	se = fopen (infn, "r");
 	if (!se) {
 		fprintf (stderr, "Could not open input file '%s'.\n", infn);
 		return EXIT_FAILURE;
@@ -163,39 +171,55 @@ int single_main (int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
+
+    threads = malloc (sizeof(pthread_t) * num_threads_single);
+    global_swd = malloc (sizeof(global_swd) * num_threads_single);
+
+    for (i=0; i<num_threads_single; i++) {
+        global_swd[i].fqrec_r1 = get_fq_record (se);
+
+        global_swd[i].qualtype = qualtype;
+        global_swd[i].length_threshold = single_length_threshold;
+        global_swd[i].qual_threshold = single_qual_threshold;
+        global_swd[i].no_fiveprime = no_fiveprime;
+        global_swd[i].discard_n = discard_n;
+
+        pthread_create (&threads[i], NULL, &sw_call, &i);
+    }
 	
-	fqrec = kseq_init (se);
+	while (1) {
 
-	while ((l = kseq_read (fqrec)) >= 0) {
-
-		p1cut = sliding_window (fqrec, qualtype, single_length_threshold, single_qual_threshold, no_fiveprime, discard_n);
+        pthread_join (threads[waitnum], NULL);
 
 		/* if sequence quality and length pass filter then output record, else discard */
-		if (p1cut->three_prime_cut >= 0) {
-			fprintf (outfile, "@%s", fqrec->name.s);
-			if (fqrec->comment.l) fprintf (outfile, " %s\n", fqrec->comment.s);
-			else fprintf (outfile, "\n");
+		if (global_swd[waitnum].three_prime_cut_r1 >= 0) {
+			fprintf (outfile, "%s", global_swd[waitnum].fqrec_r1->h1);
 
 			/* This print statement prints out the sequence string starting from the 5' cut */
 			/* and then only prints out to the 3' cut, however, we need to adjust the 3' cut */
 			/* by subtracting the 5' cut because the 3' cut was calculated on the original sequence */
-			fprintf (outfile, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec->seq.s + p1cut->five_prime_cut);
+			fprintf (outfile, "%.*s\n", global_swd[waitnum].three_prime_cut_r1 - global_swd[waitnum].five_prime_cut_r1, global_swd[waitnum].fqrec_r1->seq + global_swd[waitnum].five_prime_cut_r1);
 
 			fprintf (outfile, "+\n");
-			fprintf (outfile, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec->qual.s + p1cut->five_prime_cut);
+			fprintf (outfile, "%.*s\n", global_swd[waitnum].three_prime_cut_r1 - global_swd[waitnum].five_prime_cut_r1, global_swd[waitnum].fqrec_r1->qual + global_swd[waitnum].five_prime_cut_r1);
 
 			kept++;
 		}
 
 		else discard++;
 
-		free(p1cut);
+        free (global_swd[waitnum].fqrec_r1);
+        global_swd[waitnum].fqrec_r1 = get_fq_record (se);
+
+        if (global_swd[waitnum].fqrec_r1 == NULL) {break;}
+        pthread_create (&threads[waitnum], NULL, &sw_call, &waitnum);
+
+        waitnum = (waitnum + 1) % num_threads_single;
 	}
 
 	if (!quiet) fprintf (stdout, "\nFastQ records kept: %d\nFastQ records discarded: %d\n\n", kept, discard);
 
-	kseq_destroy (fqrec);
-	gzclose (se);
+	fclose (se);
 	fclose (outfile);
 	return 0;
 }
