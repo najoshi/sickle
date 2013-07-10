@@ -34,7 +34,7 @@ dist:
 	tar -zcf $(ARCHIVE).tar.gz src Makefile
 
 build: sliding.o trim_single.o trim_paired.o sickle.o
-	$(CC) $(CFLAGS) $(LDFLAGS) $(OPT) $? -o sickle
+	$(CC) $(CFLAGS) $? $(LDFLAGS) $(OPT) -o sickle
 
 debug:
 	$(MAKE) build "CFLAGS=-Wall -pedantic -g -DDEBUG"
