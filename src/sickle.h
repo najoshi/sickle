@@ -82,7 +82,7 @@ static const char typenames[4][10] = {
 static const int quality_constants[4][3] = {
   /* offset, min, max */
   {0, 4, 60}, /* PHRED */
-  {33, 33, 80}, /* SANGER */
+  {33, 33, 126}, /* SANGER */
   {64, 58, 112}, /* SOLEXA; this is an approx; the transform is non-linear */
   {64, 64, 110} /* ILLUMINA */
 };

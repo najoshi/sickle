@@ -66,6 +66,10 @@ cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int
 
 		window_avg = (double)window_total / (double)window_size;
 
+        /* If it is the first window, and the qual average is already above
+           the threshold, then we have already found the five prime cut at pos 0 */
+        if (i==0 && window_avg >= qual_threshold) {found_five_prime = 1;}
+
 		/* Finding the 5' cutoff */
 		/* Find when the average quality in the window goes above the threshold starting from the 5' end */
 		if (no_fiveprime == 0 && found_five_prime == 0 && window_avg >= qual_threshold) {
@@ -84,8 +88,8 @@ cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int
 		/* Finding the 3' cutoff */
 		/* if the average quality in the window is less than the threshold */
 		/* or if the window is the last window in the read */
-		if ((window_avg < qual_threshold) || 
-			(window_start+window_size > fqrec->qual.l)) {
+		if ((window_avg < qual_threshold || 
+			window_start+window_size > fqrec->qual.l) && found_five_prime == 1) {
 
 			/* at what point in the window does the quality dip below the threshold? */
 			for (j=window_start; j<window_start+window_size; j++) {
@@ -112,6 +116,12 @@ cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int
 		}
 		window_start++;
 	}
+
+    /* If you never find a five prime cut site, then discard whole read */
+    if (found_five_prime == 0) {
+        three_prime_cut = -1;
+        five_prime_cut = -1;
+    }
 
 	retvals = (cutsites*) malloc (sizeof(cutsites));
 	retvals->three_prime_cut = three_prime_cut;
