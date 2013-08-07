@@ -5,11 +5,33 @@
 		sickle $readtype.single_or_paired --quiet
 
 		#if str($readtype.single_or_paired) == "se":
-		-f $input_single -t $qual_type -o $output_single
+		-f $input_single -o $output_single
+
+		#if $input_single.ext == "fastq":
+		-t sanger
+		#else if $input_single.ext == "fastqsanger":
+		-t sanger
+		#else if $input_single.ext == "fastqillumina":
+		-t illumina
+		#else if $input_single.ext == "fastqsolexa":
+		-t solexa
+		#end if
+
 		#end if
 
 		#if str($readtype.single_or_paired) == "pe":
-		-f $input_paired1 -r $input_paired2 -o $output_paired1 -p $output_paired2 -s $output_paired_single -t $qual_type
+		-f $input_paired1 -r $input_paired2 -o $output_paired1 -p $output_paired2 -s $output_paired_single
+
+                #if $input_paired1.ext == "fastq":
+                -t sanger
+                #else if $input_single.ext == "fastqsanger":
+                -t sanger
+                #else if $input_single.ext == "fastqillumina":
+                -t illumina
+                #else if $input_single.ext == "fastqsolexa":
+                -t solexa
+                #end if
+
 		#end if
 
 		#if str($qual_threshold) != "":
@@ -31,26 +53,20 @@
 
 	<inputs>
 		<conditional name="readtype">
-			<param name="single_or_paired" type="select" optional="false" label="Single-End or Paired-End reads?">
+			<param name="single_or_paired" type="select" optional="false" label="Single-End or Paired-End reads?" help="Note: Sickle will infer the quality type of the file from its datatype.  I.e., if the datatype is fastqsanger, then the quality type is sanger.  The default is fastqsanger.">
 				<option value="se" selected="true">Single-End</option>
 				<option value="pe">Paired-End</option>
 			</param>
 
 			<when value="se">
-				<param format="fastq, fastqsanger" name="input_single" type="data" optional="false" label="Single-End FastQ Reads"/>
+				<param format="fastq, fastqsanger, fastqillumina, fastqsolexa" name="input_single" type="data" optional="false" label="Single-End FastQ Reads"/>
 			</when>
 
 			<when value="pe">
-				<param format="fastq, fastqsanger" name="input_paired1" type="data" optional="false" label="Paired-End Forward Strand FastQ Reads"/>
-				<param format="fastq, fastqsanger" name="input_paired2" type="data" optional="false" label="Paired-End Reverse Strand FastQ Reads"/>
+				<param format="fastq, fastqsanger, fastqillumina, fastqsolexa" name="input_paired1" type="data" optional="false" label="Paired-End Forward Strand FastQ Reads"/>
+				<param format="fastq, fastqsanger, fastqillumina, fastqsolexa" name="input_paired2" type="data" optional="false" label="Paired-End Reverse Strand FastQ Reads"/>
 			</when>
 		</conditional>
-
-		<param name="qual_type" type="select" optional="false" label="Quality type">
-			<option value="illumina" selected="true">Illumina</option>
-			<option value="solexa">Solexa</option>
-			<option value="sanger">Sanger</option>
-		</param>
 
 		<param name="qual_threshold" value="20" type="integer" optional="true" label="Quality Threshold">
 			<validator type="in_range" min="0" message="Minimum value is 0"/>
@@ -89,7 +105,7 @@ Sickle is a tool that uses sliding windows along with quality and length thresho
 
 Sickle also has an option to discard reads with any Ns in them.
 
-Sickle supports three types of quality values: Illumina, Solexa, and Sanger. Note that the Solexa quality setting is an approximation (the actual conversion is a non-linear transformation). The end approximation is close. Illumina quality refers to qualities encoded with the CASAVA pipeline between versions 1.3 and 1.7. Illumina quality using CASAVA >= 1.8 is Sanger encoded.
+Sickle supports three types of quality values: Illumina, Solexa, and Sanger. Note that the Solexa quality setting is an approximation (the actual conversion is a non-linear transformation). The end approximation is close. Illumina quality refers to qualities encoded with the CASAVA pipeline between versions 1.3 and 1.7. Illumina quality using CASAVA >= 1.8 is Sanger encoded.  Sickle will get the quality type from the datatype of the file.
 
 Note that Sickle will remove the 2nd fastq record header (on the "+" line) and replace it with simply a "+". This is the default format for CASAVA >= 1.8.
 
