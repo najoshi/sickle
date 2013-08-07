@@ -22,7 +22,7 @@ static struct option paired_long_options[] = {
 	{"pe-combo", optional_argument, 0, 'c'},
 	{"output-pe1", optional_argument, 0, 'o'},
 	{"output-pe2", optional_argument, 0, 'p'},
-	{"output-single", required_argument, 0, 's'},
+	{"output-single", optional_argument, 0, 's'},
 	{"output-combo", optional_argument, 0, 'm'},
 	{"qual-threshold", optional_argument, 0, 'q'},
 	{"length-threshold", optional_argument, 0, 'l'},
@@ -117,7 +117,7 @@ int paired_main (int argc, char *argv[]) {
 				strcpy (infn2, optarg);
 				break;
 
-      case 'c':
+            case 'c':
 				infnc = (char*) malloc (strlen (optarg) + 1);
 				strcpy (infnc, optarg);
 				break;
@@ -199,11 +199,10 @@ int paired_main (int argc, char *argv[]) {
 
   /* required: qualtype */
 	if (qualtype == -1) {
-    fprintf (stderr, "Error: Quality type (-t) is required.\n");
-		return EXIT_FAILURE;
+        paired_usage (EXIT_FAILURE);
 	}
 
-  /* required: singlton filename */
+  /* required: singleton filename */
 	if (!sfn) {
     fprintf (stderr, "Error: Single read filename (-s) is required.\n");
 		return EXIT_FAILURE;
