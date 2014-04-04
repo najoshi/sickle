@@ -110,6 +110,10 @@ Sickle supports three types of quality values: Illumina, Solexa, and Sanger. Not
 Note that Sickle will remove the 2nd fastq record header (on the "+" line) and replace it with simply a "+". This is the default format for CASAVA >= 1.8.
 
 Sickle also supports gzipped file inputs.
+
+Copyright: Nikhil Joshi
+http://bioinformatics.ucdavis.edu
+http://github.com/ucdavis-bioinformatics
 	</help>
 
 </tool>
