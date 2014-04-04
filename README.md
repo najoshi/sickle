@@ -42,6 +42,11 @@ Sickle also supports gzipped file inputs. There is also a sickle.xml
 file included in the package that can be used to add sickle to your
 local [Galaxy](http://galaxy.psu.edu/) server.
 
+## Citation
+Sickle doesn't have a paper, but you can cite it like this:
+
+    Joshi NA, Fass JN. (2011). Sickle: A sliding-window, adaptive, quality-based trimming tool for FastQ files (Version 1.21) [Software].  Available at https://github.com/najoshi/sickle.
+
 ## Requirements 
 
 Sickle requires a C compiler; GCC or clang are recommended. Sickle
