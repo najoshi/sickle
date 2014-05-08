@@ -324,6 +324,9 @@ int paired_main (int argc, char *argv[]) {
     p1cut = sliding_window (fqrec1, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, discard_n);
     p2cut = sliding_window (fqrec2, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, discard_n);
 
+    if (debug) {printf ("p1cut: %d,%d\n", p1cut->five_prime_cut, p1cut->three_prime_cut);}
+    if (debug) {printf ("p2cut: %d,%d\n", p2cut->five_prime_cut, p2cut->three_prime_cut);}
+
     /* The sequence and quality print statements below print out the sequence string starting from the 5' cut */
     /* and then only print out to the 3' cut, however, we need to adjust the 3' cut */
     /* by subtracting the 5' cut because the 3' cut was calculated on the original sequence */
