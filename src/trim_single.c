@@ -170,6 +170,8 @@ int single_main (int argc, char *argv[]) {
 
 		p1cut = sliding_window (fqrec, qualtype, single_length_threshold, single_qual_threshold, no_fiveprime, discard_n);
 
+        if (debug) {printf ("P1cut: %d,%d\n", p1cut->five_prime_cut, p1cut->three_prime_cut);}
+
 		/* if sequence quality and length pass filter then output record, else discard */
 		if (p1cut->three_prime_cut >= 0) {
 			fprintf (outfile, "@%s", fqrec->name.s);

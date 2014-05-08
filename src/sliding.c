@@ -95,13 +95,6 @@ cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int
 			for (j=window_start; j<window_start+window_size; j++) {
 				if (get_quality_num (fqrec->qual.s[j], qualtype, fqrec, j) < qual_threshold) {
 					three_prime_cut = j;
-
-					/* if cutting length is less than threshold then return -1 for both */
-					/* to indicate that the read should be discarded */
-					if (three_prime_cut - five_prime_cut < length_threshold) {
-						three_prime_cut = -1;
-						five_prime_cut = -1;
-					}
 					break;
 				}
 			}
@@ -117,11 +110,15 @@ cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int
 		window_start++;
 	}
 
-    /* If you never find a five prime cut site, then discard whole read */
-    if (found_five_prime == 0) {
+
+    /* if cutting length is less than threshold then return -1 for both */
+    /* to indicate that the read should be discarded */
+    /* Also, if you never find a five prime cut site, then discard whole read */
+    if ((found_five_prime == 0) || (three_prime_cut - five_prime_cut < length_threshold)) {
         three_prime_cut = -1;
         five_prime_cut = -1;
     }
+
 
 	retvals = (cutsites*) malloc (sizeof(cutsites));
 	retvals->three_prime_cut = three_prime_cut;
