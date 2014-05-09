@@ -66,10 +66,6 @@ cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int
 
 		window_avg = (double)window_total / (double)window_size;
 
-        /* If it is the first window, and the qual average is already above
-           the threshold, then we have already found the five prime cut at pos 0 */
-        if (i==0 && window_avg >= qual_threshold) {found_five_prime = 1;}
-
 		/* Finding the 5' cutoff */
 		/* Find when the average quality in the window goes above the threshold starting from the 5' end */
 		if (no_fiveprime == 0 && found_five_prime == 0 && window_avg >= qual_threshold) {
