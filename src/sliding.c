@@ -34,11 +34,14 @@ int get_quality_num (char qualchar, int qualtype, kseq_t *fqrec, int pos) {
 
 cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int qual_threshold, int no_fiveprime, int discard_n) {
 
-	int window_size = (int) (0.1 * fqrec->seq.l);
+	int window_size = (int) (0.1 * fqrec->qual.l);
 	int i,j;
 	int window_start=0;
 	int window_total=0;
-	int three_prime_cut = fqrec->seq.l;
+	int three_prime_cut = fqrec->qual.l - 1; 
+    /* minus 1 because of zero-based qual and seq string
+    *  without this the output print unexpected characters if seq.l > qual.l
+    */
 	int five_prime_cut = 0;
 	int found_five_prime = 0;
 	double window_avg;
@@ -56,7 +59,7 @@ cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int
 
 	/* if the seq length is less then 10bp, */
 	/* then make the window size the length of the seq */
-	if (window_size == 0) window_size = fqrec->seq.l;
+	if (window_size == 0) window_size = fqrec->qual.l;
 
 	for (i=0; i<window_size; i++) {
 		window_total += get_quality_num (fqrec->qual.s[i], qualtype, fqrec, i);
@@ -71,8 +74,9 @@ cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int
         if (i==0 && window_avg >= qual_threshold) {found_five_prime = 1;}
 
 		/* Finding the 5' cutoff */
-		/* Find when the average quality in the window goes above the threshold starting from the 5' end */
-		if (no_fiveprime == 0 && found_five_prime == 0 && window_avg >= qual_threshold) {
+		/* Find when the average quality in the window goes above the threshold starting from the 5' end
+		 * Keep looking regardless of no_fiveprime trimming option*/
+		if (found_five_prime == 0 && window_avg >= qual_threshold) {
 
 			/* at what point in the window does the quality go above the threshold? */
 			for (j=window_start; j<window_start+window_size; j++) {
@@ -119,7 +123,10 @@ cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int
         five_prime_cut = -1;
     }
 
-
+    /*
+     * Reset five_prime_Cut if -x (no trimming five_prime)  is set. And the read is still worth keeping
+     */
+    if (no_fiveprime == 1 && three_prime_cut - five_prime_cut >= length_threshold ) five_prime_cut = 0;
 	retvals = (cutsites*) malloc (sizeof(cutsites));
 	retvals->three_prime_cut = three_prime_cut;
 	retvals->five_prime_cut = five_prime_cut;
