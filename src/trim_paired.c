@@ -24,6 +24,7 @@ static struct option paired_long_options[] = {
 	{"output-pe2", optional_argument, 0, 'p'},
 	{"output-single", optional_argument, 0, 's'},
 	{"output-combo", optional_argument, 0, 'm'},
+	{"output-combo-only", optional_argument, 0, 'M'},
 	{"qual-threshold", optional_argument, 0, 'q'},
 	{"length-threshold", optional_argument, 0, 'l'},
 	{"no-fiveprime", optional_argument, 0, 'x'},
@@ -49,7 +50,8 @@ void paired_usage (int status) {
 	fprintf (stderr, "-o, --output-pe1, Output trimmed fastq file 1 (optional)\n\
 -p, --output-pe2, Output trimmed fastq file 2 (optional)\n\
 -m, --output-combo, Output combined paired-end fastq file (optional)\n\
--s, --output-single, Output trimmed singles fastq file (required)\n");
+-M, --output-combo-only, Output combined paired-end fastq file, including failed reads trimmed to a single N (optional)\n\
+-s, --output-single, Output trimmed singles fastq file (required without -M)\n");
 	fprintf (stderr, "-q, --qual-threshold, Threshold for trimming based on average quality in a window. Default 20.\n\
 -l, --length-threshold, Threshold to keep a read based on length after trimming. Default 20.\n\
 -x, --no-fiveprime, Don't do five prime trimming.\n\
@@ -84,6 +86,7 @@ int paired_main (int argc, char *argv[]) {
 	char *outfn1=NULL;      /* forward file out name */
 	char *outfn2=NULL;      /* reverse file out name */
 	char *outfnc=NULL;      /* combined file out name */
+	char *outfnco=NULL;     /* combined-only file out name */
 	char *sfn=NULL;         /* single/combined file out name */
 	char *infn1=NULL;       /* forward input filename */
 	char *infn2=NULL;       /* reverse input filename */
@@ -100,7 +103,7 @@ int paired_main (int argc, char *argv[]) {
 
 	while (1) {
 		int option_index = 0;
-		optc = getopt_long (argc, argv, "df:r:c:t:o:p:m:s:q:l:xn", paired_long_options, &option_index);
+		optc = getopt_long (argc, argv, "df:r:c:t:o:p:m:M:s:q:l:xn", paired_long_options, &option_index);
 
 		if (optc == -1) break;
 
@@ -145,6 +148,11 @@ int paired_main (int argc, char *argv[]) {
 			case 'm':
 				outfnc = (char*) malloc (strlen (optarg) + 1);
 				strcpy (outfnc, optarg);
+				break;
+
+			case 'M':
+				outfnco = (char*) malloc (strlen (optarg) + 1);
+				strcpy (outfnco, optarg);
 				break;
 
 			case 's':
@@ -202,8 +210,9 @@ int paired_main (int argc, char *argv[]) {
         paired_usage (EXIT_FAILURE);
 	}
 
-  /* required: singleton filename */
-	if (!sfn) {
+  /* required: singleton filename, unless we output all into the combo (i.e,
+     combo-only mode) */
+	if (!sfn && !outfnco) {
     fprintf (stderr, "Error: Single read filename (-s) is required.\n");
 		return EXIT_FAILURE;
 	}
@@ -217,9 +226,16 @@ int paired_main (int argc, char *argv[]) {
   if (infnc) { /* using combined input file */
     fprintf(stderr,"COMBO\n");
     /* check for duplicate file names */
-    if (!strcmp (infnc, outfnc) || !strcmp (infnc, sfn) || !strcmp (outfnc, sfn)) {
-      fprintf (stderr, "Error: Duplicate filename between combo input, combo output, and/or single output file names.\n");
-      return EXIT_FAILURE;
+    if (outfnc) {
+      if (!strcmp (infnc, outfnc) || !strcmp (infnc, sfn) || !strcmp (outfnc, sfn)) {
+        fprintf (stderr, "Error: Duplicate filename between combo input, combo output, and/or single output file names.\n");
+        return EXIT_FAILURE;
+      }
+    } else if (outfnco) {
+      if (!strcmp (infnc, outfnco)) {
+        fprintf (stderr, "Error: Duplicate filename between combo input, combo output, and/or single output file names.\n");
+        return EXIT_FAILURE;
+      }
     }
     /* make sure minimum input filenames are specified*/
     if (!infn1 && !infn2 && !infnc) {
@@ -235,11 +251,20 @@ int paired_main (int argc, char *argv[]) {
       return EXIT_FAILURE;
     }
 
-    /* get combined output file */
-    combo = fopen (outfnc, "w");
-    if (!combo) {
-      fprintf (stderr, "Could not open combo output file '%s'.\n", outfnc);
-      return EXIT_FAILURE;
+    if (outfnco) {
+      /* get combined output file */
+      combo = fopen (outfnco, "w");
+      if (!combo) {
+        fprintf (stderr, "Could not open combo-only output file '%s'.\n", outfnco);
+        return EXIT_FAILURE;
+      }
+    } else {
+      /* get combined output file */
+      combo = fopen (outfnc, "w");
+      if (!combo) {
+        fprintf (stderr, "Could not open combo output file '%s'.\n", outfnc);
+        return EXIT_FAILURE;
+      }
     }
 
     pec = gzopen(infnc,"r");
@@ -298,10 +323,12 @@ int paired_main (int argc, char *argv[]) {
   }
 
   /* get singles output file handle*/
-  single = fopen (sfn, "w");
-  if (!single) {
-    fprintf (stderr, "Could not open single output file '%s'.\n", sfn);
-    return EXIT_FAILURE;
+  if (sfn) {
+    single = fopen (sfn, "w");
+    if (!single) {
+      fprintf (stderr, "Could not open single output file '%s'.\n", sfn);
+      return EXIT_FAILURE;
+    }
   }
 
   if (pec) {
@@ -363,26 +390,61 @@ int paired_main (int argc, char *argv[]) {
 
     /* if only one sequence passed filter, then put its record in singles and discard the other */
     else if (p1cut->three_prime_cut >= 0 && p2cut->three_prime_cut < 0) {
-      fprintf (single, "@%s", fqrec1->name.s);
-      if (fqrec1->comment.l) fprintf (single, " %s\n", fqrec1->comment.s);
-      else fprintf (single, "\n");
-      fprintf (single, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec1->seq.s + p1cut->five_prime_cut);
+      if (outfnco) {
+        fprintf (combo, "@%s", fqrec1->name.s);
+        if (fqrec1->comment.l) fprintf (combo, " %s\n", fqrec1->comment.s);
+        else fprintf (combo, "\n");
+        fprintf (combo, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec1->seq.s + p1cut->five_prime_cut);
 
-      fprintf (single, "+\n");
-      fprintf (single, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec1->qual.s + p1cut->five_prime_cut);
+        fprintf (combo, "+\n");
+        fprintf (combo, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec1->qual.s + p1cut->five_prime_cut);
+
+        /* Print the R2 to combo, with scythe/pairs style empty record */
+        fprintf (combo, "@%s", fqrec2->name.s);
+        if (fqrec2->comment.l) fprintf (combo, " %s\n", fqrec2->comment.s);
+        else fprintf (combo, "\n");
+        /* Write first qual, so we get the qual encoding right */
+        fprintf(combo, "N\n+\n%c\n", fqrec2->qual.s[0]);
+      } else {
+        fprintf (single, "@%s", fqrec1->name.s);
+        if (fqrec1->comment.l) fprintf (single, " %s\n", fqrec1->comment.s);
+        else fprintf (single, "\n");
+        fprintf (single, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec1->seq.s + p1cut->five_prime_cut);
+
+        fprintf (single, "+\n");
+        fprintf (single, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec1->qual.s + p1cut->five_prime_cut);
+      }
 
       kept_s1++;
       discard_s2++;
     }
 
     else if (p1cut->three_prime_cut < 0 && p2cut->three_prime_cut >= 0) {
-      fprintf (single, "@%s", fqrec2->name.s);
-      if (fqrec2->comment.l) fprintf (single, " %s\n", fqrec2->comment.s);
-      else fprintf (single, "\n");
-      fprintf (single, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->seq.s + p2cut->five_prime_cut);
+      if (outfnco) {
+        /* Print the R1 to combo, with scythe/pairs style empty record */
+        fprintf (combo, "@%s", fqrec1->name.s);
+        if (fqrec1->comment.l) fprintf (combo, " %s\n", fqrec1->comment.s);
+        else fprintf (combo, "\n");
+        /* Write first qual, so we get the qual encoding right */
+        fprintf(combo, "N\n+\n%c\n", fqrec1->qual.s[0]);
+        /* and now write the good qual pair */
+        fprintf (combo, "@%s", fqrec2->name.s);
+        if (fqrec2->comment.l) fprintf (combo, " %s\n", fqrec2->comment.s);
+        else fprintf (combo, "\n");
+        fprintf (combo, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->seq.s + p2cut->five_prime_cut);
 
-      fprintf (single, "+\n");
-      fprintf (single, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->qual.s + p2cut->five_prime_cut);
+        fprintf (combo, "+\n");
+        fprintf (combo, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->qual.s + p2cut->five_prime_cut);
+
+      } else {
+        fprintf (single, "@%s", fqrec2->name.s);
+        if (fqrec2->comment.l) fprintf (single, " %s\n", fqrec2->comment.s);
+        else fprintf (single, "\n");
+        fprintf (single, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->seq.s + p2cut->five_prime_cut);
+
+        fprintf (single, "+\n");
+        fprintf (single, "%.*s\n", p2cut->three_prime_cut - p2cut->five_prime_cut, fqrec2->qual.s + p2cut->five_prime_cut);
+      }
 
       kept_s2++;
       discard_s1++;
@@ -424,7 +486,9 @@ int paired_main (int argc, char *argv[]) {
   } else {
     kseq_destroy (fqrec2);
   }
-	fclose (single);
+	if (single) {
+    fclose (single);
+  }
   if (pec) {
     gzclose (pec);
     fclose (combo);
