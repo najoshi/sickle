@@ -48,7 +48,7 @@ local [Galaxy](http://galaxy.psu.edu/) server.
 Sickle doesn't have a paper, but you can cite it like this:
 
     Joshi NA, Fass JN. (2011). Sickle: A sliding-window, adaptive, quality-based trimming tool for FastQ files 
-    (Version 1.29) [Software].  Available at https://github.com/najoshi/sickle.
+    (Version 1.31) [Software].  Available at https://github.com/najoshi/sickle.
 
 ## Requirements 
 
