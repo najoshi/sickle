@@ -38,8 +38,10 @@ Note that Sickle will remove the 2nd fastq record header (on the "+"
 line) and replace it with simply a "+". This is the default format for
 CASAVA >= 1.8.
 
-Sickle also supports gzipped file inputs. There is also a sickle.xml
-file included in the package that can be used to add sickle to your
+Sickle also supports gzipped file inputs and optional gzipped outputs. By default,
+Sickle will produce regular (i.e. not gzipped) output, regardless of the input.
+
+There is also a sickle.xml file included in the package that can be used to add sickle to your
 local [Galaxy](http://galaxy.psu.edu/) server.
 
 ## Citation
@@ -91,6 +93,7 @@ removal of sequences with Ns.
     sickle se -f input_file.fastq -t illumina -o trimmed_output_file.fastq
     sickle se -f input_file.fastq -t illumina -o trimmed_output_file.fastq -q 33 -l 40
     sickle se -f input_file.fastq -t illumina -o trimmed_output_file.fastq -x -n
+    sickle se -t sanger -g -f input_file.fastq -o trimmed_output_file.fastq.gz
 
 ### Sickle Paired End (`sickle pe`)
 
@@ -121,3 +124,7 @@ enable removal of sequences with Ns.
 
     sickle pe -c combo.fastq -t sanger -m combo_trimmed.fastq \
     -s trimmed_singles_file.fastq -n
+
+    sickle pe -t sanger -g -f input_file1.fastq -r input_file2.fastq \
+    -o trimmed_output_file1.fastq.gz -p trimmed_output_file2.fastq.gz \
+    -s trimmed_singles_file.fastq.gz
