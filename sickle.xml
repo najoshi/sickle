@@ -2,25 +2,40 @@
 	<description>Windowed Adaptive Trimming of FastQ data</description>
 
 	<command>
-		sickle $readtype.single_or_paired --quiet
+	sickle
 
-		#if str($readtype.single_or_paired) == "se":
-		-f $input_single -o $output_single
+        #if str($readtype.single_or_paired) == "se":
+        se -f $input_single -o $output_single
 
-		#if $input_single.ext == "fastq":
-		-t sanger
-		#else if $input_single.ext == "fastqsanger":
-		-t sanger
-		#else if $input_single.ext == "fastqillumina":
-		-t illumina
-		#else if $input_single.ext == "fastqsolexa":
-		-t solexa
+            #if $input_single.ext == "fastq":
+            -t sanger
+            #else if $input_single.ext == "fastqsanger":
+            -t sanger
+            #else if $input_single.ext == "fastqillumina":
+            -t illumina
+            #else if $input_single.ext == "fastqsolexa":
+            -t solexa
+            #end if
+
 		#end if
 
-		#end if
+        #if str($readtype.single_or_paired) == "pe_combo":
+        pe -c $input_combo -m $output_combo -s $output_combo_single
 
-		#if str($readtype.single_or_paired) == "pe":
-		-f $input_paired1 -r $input_paired2 -o $output_paired1 -p $output_paired2 -s $output_paired_single
+            #if $input_combo.ext == "fastq":
+            -t sanger
+            #else if $input_combo.ext == "fastqsanger":
+            -t sanger
+            #else if $input_combo.ext == "fastqillumina":
+            -t illumina
+            #else if $input_combo.ext == "fastqsolexa":
+            -t solexa
+            #end if
+
+        #end if
+
+		#if str($readtype.single_or_paired) == "pe_sep":
+		pe -f $input_paired1 -r $input_paired2 -o $output_paired1 -p $output_paired2 -s $output_paired_single
 
                 #if $input_paired1.ext == "fastq":
                 -t sanger
@@ -49,20 +64,27 @@
 		#if $discard_n:
 		-n
 		#end if
+
+		--quiet
 	</command>
 
 	<inputs>
 		<conditional name="readtype">
 			<param name="single_or_paired" type="select" optional="false" label="Single-End or Paired-End reads?" help="Note: Sickle will infer the quality type of the file from its datatype.  I.e., if the datatype is fastqsanger, then the quality type is sanger.  The default is fastqsanger.">
 				<option value="se" selected="true">Single-End</option>
-				<option value="pe">Paired-End</option>
+				<option value="pe_combo">Paired-End (one interleaved input file)</option>
+                		<option value="pe_sep">Paired-End (two separate input files)</option>
 			</param>
 
 			<when value="se">
 				<param format="fastq, fastqsanger, fastqillumina, fastqsolexa" name="input_single" type="data" optional="false" label="Single-End FastQ Reads"/>
 			</when>
 
-			<when value="pe">
+            <when value="pe_combo">
+                <param format="fastq, fastqsanger, fastqillumina, fastqsolexa" name="input_combo" type="data" optional="false" label="Paired-End Interleaved FastQ Reads"/>
+            </when>
+
+			<when value="pe_sep">
 				<param format="fastq, fastqsanger, fastqillumina, fastqsolexa" name="input_paired1" type="data" optional="false" label="Paired-End Forward Strand FastQ Reads"/>
 				<param format="fastq, fastqsanger, fastqillumina, fastqsolexa" name="input_paired2" type="data" optional="false" label="Paired-End Reverse Strand FastQ Reads"/>
 			</when>
@@ -85,16 +107,24 @@
 		<filter>(readtype['single_or_paired'] == 'se')</filter>
 		</data>
 
+        <data format_source="input_combo" name="output_combo" label="Paired-End interleaved output of ${tool.name} on ${on_string}">
+        <filter>(readtype['single_or_paired'] == 'pe_combo')</filter>
+        </data>
+
+        <data format_source="input_combo" name="output_combo_single" label="Singletons from Paired-End interleaved output of ${tool.name} on ${on_string}">
+        <filter>(readtype['single_or_paired'] == 'pe_combo')</filter>
+        </data>
+
 		<data format_source="input_paired1" name="output_paired1" label="Paired-End forward strand output of ${tool.name} on ${on_string}">
-		<filter>(readtype['single_or_paired'] == 'pe')</filter>
+		<filter>(readtype['single_or_paired'] == 'pe_sep')</filter>
 		</data>
 
 		<data format_source="input_paired2" name="output_paired2" label="Paired-End reverse strand output of ${tool.name} on ${on_string}">
-		<filter>(readtype['single_or_paired'] == 'pe')</filter>
+		<filter>(readtype['single_or_paired'] == 'pe_sep')</filter>
 		</data>
 
 		<data format_source="input_paired1" name="output_paired_single" label="Singletons from Paired-End output of ${tool.name} on ${on_string}">
-		<filter>(readtype['single_or_paired'] == 'pe')</filter>
+		<filter>(readtype['single_or_paired'] == 'pe_sep')</filter>
 		</data>
 	</outputs>
 
