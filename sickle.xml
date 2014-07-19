@@ -86,7 +86,7 @@
 
             <when value="pe_combo">
                 <param format="fastq, fastqsanger, fastqillumina, fastqsolexa" name="input_combo" type="data" optional="false" label="Paired-End Interleaved FastQ Reads"/>
-                <param name="output_n" type="boolean" label="Output only one file with all reads" help="This will output only one file with all the reads, where the reads that did not pass filter will be replaced with a single 'N'"/>
+                <param name="output_n" type="boolean" label="Output only one file with all reads" help="This will output only one file with all the reads, where the reads that did not pass filter will be replaced with a single 'N', rather than discarded."/>
             </when>
 
 			<when value="pe_sep">
@@ -163,23 +163,71 @@ where in the window the drop occurs and cuts both the read and quality
 strings there for the 3'-end cut.  However, if the length of the
 remaining sequence is less than the minimum length threshold, then the
 read is discarded entirely (or replaced with an "N" record). 5'-end
-trimming can be disabled.
-
-Sickle also has an option to truncate reads with Ns at the first N position.
+trimming can be disabled. Sickle also has an option to truncate reads 
+with Ns at the first N position.
 
 Sickle supports three types of quality values: Illumina, Solexa, and
 Sanger. Note that the Solexa quality setting is an approximation (the
 actual conversion is a non-linear transformation). The end
 approximation is close. Illumina quality refers to qualities encoded
 with the CASAVA pipeline between versions 1.3 and 1.7.  Illumina
-quality using CASAVA >= 1.8 is Sanger encoded.
+quality using CASAVA >= 1.8 is Sanger encoded. The quality value will
+be determined from the datatype of the data, i.e. a fastqsanger datatype
+is assumed to be Sanger encoded.
 
 Note that Sickle will remove the 2nd fastq record header (on the "+"
 line) and replace it with simply a "+". This is the default format for
 CASAVA >= 1.8.
 
-Sickle also supports gzipped file inputs and optional gzipped outputs. By default,
-Sickle will produce regular (i.e. not gzipped) output, regardless of the input.
+-----
+
+.. class:: infomark
+
+**Options**
+
+**Single-end**
+
+This option takes one single-end input file and outputs one single-end 
+output file of reads that passed the filters.
+
+**Paired-End (one interleaved input file)**
+
+This option takes as input one interleaved paired-end file. If you then
+check the "Output only one file with all reads" checkbox, it will output
+one interleaved file where any read that did not pass filter will be replaced 
+with a FastQ record where the sequence is a single "N" and the quality is the 
+lowest quality possible for that quality type. This will preserve the paired 
+nature of the data. If you leave the checkbox unchecked, it will output two files,
+one interleaved file with all the passed pairs and one singletons file where only 
+one of the pair passed filter.
+
+**Paired-End (two separate input files)**
+
+This option takes two separate (forward and reverse) paired-end files as input. 
+The output is three files: Two paired-end files with pairs that passed filter and
+a singletons file where only one of the pair passed filter.
+
+**Quality threshold**
+
+Input your desired quality threshold. This threshold is phred-scaled, which is typically
+values between 0-41 for FastQ data.
+
+**Length threshold**
+
+Input your desired length threshold. This is the threshold to determine if a read is kept
+after all the trimming steps are done.
+
+**Disable 5-prime trimming**
+
+An option to disable trimming the read on the 5-prime end. This trimming trims the read 
+if the average quality values dip below the quality threshold at the 5-prime end.
+
+**Truncate sequences with Ns**
+
+This option will trim a read at the first "N" base in the read after doing quality trimming. 
+It is then still subject to the length threshold.
+
+-----
 
 .. class:: infomark
 
