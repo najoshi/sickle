@@ -48,7 +48,7 @@ enum {
 "version", no_argument, NULL, GETOPT_VERSION_CHAR
 #define case_GETOPT_HELP_CHAR(Usage_call) \
 case GETOPT_HELP_CHAR: \
-Usage_call(EXIT_SUCCESS); \
+Usage_call(EXIT_SUCCESS, NULL); \
 break;
 #define case_GETOPT_VERSION_CHAR(Program_name, Version, Authors) \
 case GETOPT_VERSION_CHAR: \

@@ -1,5 +1,5 @@
 PROGRAM_NAME = sickle
-VERSION = 1.31
+VERSION = 1.33
 CC = gcc
 CFLAGS = -Wall -pedantic -DVERSION=$(VERSION)
 DEBUG = -g
@@ -25,6 +25,9 @@ trim_paired.o: $(SDIR)/trim_paired.c $(SDIR)/sickle.h $(SDIR)/kseq.h
 sickle.o: $(SDIR)/sickle.c $(SDIR)/sickle.h
 	$(CC) $(CFLAGS) $(OPT) -c $(SDIR)/$*.c
 
+print_record.o: $(SDIR)/print_record.c $(SDIR)/print_record.h
+	$(CC) $(CFLAGS) $(OPT) -c $(SDIR)/$*.c
+
 clean:
 	rm -rf *.o $(SDIR)/*.gch ./sickle
 
@@ -34,7 +37,7 @@ distclean: clean
 dist:
 	tar -zcf $(ARCHIVE).tar.gz src Makefile
 
-build: sliding.o trim_single.o trim_paired.o sickle.o
+build: sliding.o trim_single.o trim_paired.o sickle.o print_record.o
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OPT) $? -o sickle $(LIBS)
 
 debug:

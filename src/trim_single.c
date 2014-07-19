@@ -6,6 +6,7 @@
 #include <getopt.h>
 #include "sickle.h"
 #include "kseq.h"
+#include "print_record.h"
 
 __KS_GETC(gzread, BUFFER_SIZE)
 __KS_GETUNTIL(gzread, BUFFER_SIZE)
@@ -29,9 +30,9 @@ static struct option single_long_options[] = {
     {NULL, 0, NULL, 0}
 };
 
-void single_usage(int status) {
+void single_usage(int status, char *msg) {
 
-    fprintf(stderr, "\nUsage: %s se -f <fastq sequence file> -t <quality type> -o <trimmed fastq file>\n\
+    fprintf(stderr, "\nUsage: %s se [options] -f <fastq sequence file> -t <quality type> -o <trimmed fastq file>\n\
 \n\
 Options:\n\
 -f, --fastq-file, Input fastq file (required)\n\
@@ -41,12 +42,13 @@ Options:\n\
     fprintf(stderr, "-q, --qual-threshold, Threshold for trimming based on average quality in a window. Default 20.\n\
 -l, --length-threshold, Threshold to keep a read based on length after trimming. Default 20.\n\
 -x, --no-fiveprime, Don't do five prime trimming.\n\
--n, --discard-n, Discard sequences with any Ns in them.\n\
+-n, --trunc-n, Truncate sequences at position of first N.\n\
 -g, --gzip-output, Output gzipped files.\n\
 --quiet, Don't print out any trimming information\n\
 --help, display this help and exit\n\
 --version, output version information and exit\n\n");
 
+    if (msg) fprintf(stderr, "%s\n\n", msg);
     exit(status);
 }
 
@@ -68,7 +70,7 @@ int single_main(int argc, char *argv[]) {
     int discard = 0;
     int quiet = 0;
     int no_fiveprime = 0;
-    int discard_n = 0;
+    int trunc_n = 0;
     int gzip_output = 0;
 
     while (1) {
@@ -126,7 +128,7 @@ int single_main(int argc, char *argv[]) {
             break;
 
         case 'n':
-            discard_n = 1;
+            trunc_n = 1;
             break;
 
         case 'g':
@@ -145,41 +147,41 @@ int single_main(int argc, char *argv[]) {
         case_GETOPT_VERSION_CHAR(PROGRAM_NAME, VERSION, AUTHORS);
 
         case '?':
-            single_usage(EXIT_FAILURE);
+            single_usage(EXIT_FAILURE, NULL);
             break;
 
         default:
-            single_usage(EXIT_FAILURE);
+            single_usage(EXIT_FAILURE, NULL);
             break;
         }
     }
 
 
     if (qualtype == -1 || !infn || !outfn) {
-        single_usage(EXIT_FAILURE);
+        single_usage(EXIT_FAILURE, "****Error: Must have quality type, input file, and output file.");
     }
 
     if (!strcmp(infn, outfn)) {
-        fprintf(stderr, "Error: Input file is same as output file.\n");
+        fprintf(stderr, "****Error: Input file is same as output file.\n\n");
         return EXIT_FAILURE;
     }
 
     se = gzopen(infn, "r");
     if (!se) {
-        fprintf(stderr, "Could not open input file '%s'.\n", infn);
+        fprintf(stderr, "****Error: Could not open input file '%s'.\n\n", infn);
         return EXIT_FAILURE;
     }
 
     if (!gzip_output) {
         outfile = fopen(outfn, "w");
         if (!outfile) {
-            fprintf(stderr, "Could not open output file '%s'.\n", outfn);
+            fprintf(stderr, "****Error: Could not open output file '%s'.\n\n", outfn);
             return EXIT_FAILURE;
         }
     } else {
         outfile_gzip = gzopen(outfn, "w");
         if (!outfile_gzip) {
-            fprintf(stderr, "Could not open output file '%s'.\n", outfn);
+            fprintf(stderr, "****Error: Could not open output file '%s'.\n\n", outfn);
             return EXIT_FAILURE;
         }
     }
@@ -189,38 +191,20 @@ int single_main(int argc, char *argv[]) {
 
     while ((l = kseq_read(fqrec)) >= 0) {
 
-        p1cut = sliding_window(fqrec, qualtype, single_length_threshold, single_qual_threshold, no_fiveprime, discard_n);
+        p1cut = sliding_window(fqrec, qualtype, single_length_threshold, single_qual_threshold, no_fiveprime, trunc_n);
 
-        if (debug) {
-            printf("P1cut: %d,%d\n", p1cut->five_prime_cut, p1cut->three_prime_cut);
-        }
+        if (debug) printf("P1cut: %d,%d\n", p1cut->five_prime_cut, p1cut->three_prime_cut);
 
         /* if sequence quality and length pass filter then output record, else discard */
         if (p1cut->three_prime_cut >= 0) {
             if (!gzip_output) {
-                fprintf(outfile, "@%s", fqrec->name.s);
-                if (fqrec->comment.l) fprintf(outfile, " %s\n", fqrec->comment.s);
-                else fprintf(outfile, "\n");
-
                 /* This print statement prints out the sequence string starting from the 5' cut */
                 /* and then only prints out to the 3' cut, however, we need to adjust the 3' cut */
                 /* by subtracting the 5' cut because the 3' cut was calculated on the original sequence */
-                fprintf(outfile, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec->seq.s + p1cut->five_prime_cut);
 
-                fprintf(outfile, "+\n");
-                fprintf(outfile, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec->qual.s + p1cut->five_prime_cut);
+                print_record (outfile, fqrec, p1cut);
             } else {
-                gzprintf(outfile_gzip, "@%s", fqrec->name.s);
-                if (fqrec->comment.l) gzprintf(outfile_gzip, " %s\n", fqrec->comment.s);
-                else gzprintf(outfile_gzip, "\n");
-
-                /* This print statement prints out the sequence string starting from the 5' cut */
-                /* and then only prints out to the 3' cut, however, we need to adjust the 3' cut */
-                /* by subtracting the 5' cut because the 3' cut was calculated on the original sequence */
-                gzprintf(outfile_gzip, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec->seq.s + p1cut->five_prime_cut);
-
-                gzprintf(outfile_gzip, "+\n");
-                gzprintf(outfile_gzip, "%.*s\n", p1cut->three_prime_cut - p1cut->five_prime_cut, fqrec->qual.s + p1cut->five_prime_cut);
+                print_record_gzip (outfile_gzip, fqrec, p1cut);
             }
 
             kept++;

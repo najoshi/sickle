@@ -32,7 +32,7 @@ int get_quality_num (char qualchar, int qualtype, kseq_t *fqrec, int pos) {
 }
 
 
-cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int qual_threshold, int no_fiveprime, int discard_n) {
+cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int qual_threshold, int no_fiveprime, int trunc_n) {
 
 	int window_size = (int) (0.1 * fqrec->seq.l);
 	int i,j;
@@ -43,11 +43,10 @@ cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int
 	int found_five_prime = 0;
 	double window_avg;
 	cutsites* retvals;
+    char *npos;
 
-	/* If the sequence contains an "N" then discard if the option has been selected */
-	/* Also discard if the length of the sequence is less than the length threshold */
-	if ((discard_n && (strstr(fqrec->seq.s, "N") || strstr(fqrec->seq.s, "n"))) || 
-			(fqrec->seq.l < length_threshold)) {
+	/* discard if the length of the sequence is less than the length threshold */
+    if (fqrec->seq.l < length_threshold) {
 		retvals = (cutsites*) malloc (sizeof(cutsites));
 		retvals->three_prime_cut = -1;
 		retvals->five_prime_cut = -1;
@@ -106,6 +105,12 @@ cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int
 		window_start++;
 	}
 
+
+    /* If truncate N option is selected, and sequence has Ns, then */
+    /* change 3' cut site to be the base before the first N */
+    if (trunc_n && ((npos = strstr(fqrec->seq.s, "N")) || (npos = strstr(fqrec->seq.s, "n")))) {
+        three_prime_cut = npos - fqrec->seq.s;
+    }
 
     /* if cutting length is less than threshold then return -1 for both */
     /* to indicate that the read should be discarded */
