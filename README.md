@@ -26,8 +26,6 @@ remaining sequence is less than the minimum length threshold, then the
 read is discarded entirely (or replaced with an "N" record). 5'-end 
 trimming can be disabled.
 
-Sickle also has an option to truncate reads with Ns at the first N position.
-
 Sickle supports three types of quality values: Illumina, Solexa, and
 Sanger. Note that the Solexa quality setting is an approximation (the
 actual conversion is a non-linear transformation). The end
@@ -41,6 +39,7 @@ CASAVA >= 1.8.
 
 Sickle also supports gzipped file inputs and optional gzipped outputs. By default,
 Sickle will produce regular (i.e. not gzipped) output, regardless of the input.
+Sickle also has an option to truncate reads with Ns at the first N position.
 
 There is also a sickle.xml file included in the package that can be used to add sickle to your
 local [Galaxy](http://galaxy.psu.edu/) server.
@@ -105,12 +104,13 @@ combined input file of reads where you have already interleaved the
 reads from the sequencer.  In this form, you also supply a single
 output file name as well as a "singles" file.  The "singles" file
 contains reads that passed filter in either the forward or reverse
-direction, but not the other.  Finally, there is an option to only 
+direction, but not the other.  Finally, there is an option (-M) to only 
 produce one interleaved output file where any reads that did not pass 
-filter will be output as a FastQ record with a single "N", thus 
-preserving the paired nature of the data.  You can also 
-change the length and quality thresholds for trimming, as well as 
-disable 5'-trimming and enable truncation of sequences with Ns.
+filter will be output as a FastQ record with a single "N" (whose quality 
+value is the lowest possible based upon the quality type), thus 
+preserving the paired nature of the data.  You can also change the length 
+and quality thresholds for trimming, as well as disable 5'-trimming and 
+enable truncation of sequences with Ns.
 
 #### Examples
 
