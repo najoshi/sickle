@@ -1,4 +1,4 @@
-<tool id="sickle" name="Sickle">
+<tool id="sickle" name="Sickle" version="1.33">
 	<description>Windowed Adaptive Trimming of FastQ data</description>
 
 	<command>
