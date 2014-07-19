@@ -43,11 +43,11 @@
 
                 #if $input_paired1.ext == "fastq":
                 -t sanger
-                #else if $input_single.ext == "fastqsanger":
+                #else if $input_paired1.ext == "fastqsanger":
                 -t sanger
-                #else if $input_single.ext == "fastqillumina":
+                #else if $input_paired1.ext == "fastqillumina":
                 -t illumina
-                #else if $input_single.ext == "fastqsolexa":
+                #else if $input_paired1.ext == "fastqsolexa":
                 -t solexa
                 #end if
 
