@@ -433,14 +433,14 @@ int paired_main(int argc, char *argv[]) {
             if (!gzip_output) {
                 if (combo_all) {
                     print_record_N (combo, fqrec1, qualtype);
-                    print_record (combo, fqrec2, p1cut);
+                    print_record (combo, fqrec2, p2cut);
                 } else {
                     print_record (single, fqrec2, p2cut);
                 }
             } else {
                 if (combo_all) {
                     print_record_N_gzip (combo_gzip, fqrec1, qualtype);
-                    print_record_gzip (combo_gzip, fqrec2, p1cut);
+                    print_record_gzip (combo_gzip, fqrec2, p2cut);
                 } else {
                     print_record_gzip (single_gzip, fqrec2, p2cut);
                 }
