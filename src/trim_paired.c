@@ -40,23 +40,23 @@ static struct option paired_long_options[] = {
 void paired_usage (int status, char *msg) {
 
     fprintf(stderr, "\nIf you have separate files for forward and reverse reads:\n");
-    fprintf(stderr, "Usage: %s pe [options] -f <paired-end fastq file 1> -r <paired-end fastq file 2> -t <quality type> -o <trimmed pe file 1> -p <trimmed pe file 2> -s <trimmed singles file>\n\n", PROGRAM_NAME);
+    fprintf(stderr, "Usage: %s pe [options] -f <paired-end forward fastq file> -r <paired-end reverse fastq file> -t <quality type> -o <trimmed PE forward file> -p <trimmed PE reverse file> -s <trimmed singles file>\n\n", PROGRAM_NAME);
     fprintf(stderr, "If you have one file with interleaved forward and reverse reads:\n");
-    fprintf(stderr, "Usage: %s pe [options] -c <combined input file> -t <quality type> -m <interleaved trimmed paired-end output> -s <trimmed singles file>\n\n\
+    fprintf(stderr, "Usage: %s pe [options] -c <interleaved input file> -t <quality type> -m <interleaved trimmed paired-end output> -s <trimmed singles file>\n\n\
 If you have one file with interleaved reads as input and you want ONLY one interleaved file as output:\n\
 Usage: %s pe [options] -c <interleaved input file> -t <quality type> -M <interleaved trimmed output>\n\n", PROGRAM_NAME, PROGRAM_NAME);
     fprintf(stderr, "Options:\n\
 Paired-end separated reads\n\
 --------------------------\n\
--f, --pe-file1, Input paired-end fastq file 1 (must have same number of records as file 2)\n\
--r, --pe-file2, Input paired-end fastq file 2 (must have same number of records as file 1)\n\
--o, --output-pe1, Output trimmed fastq file 1\n\
--p, --output-pe2, Output trimmed fastq file 2. Must use -s option.\n\n\
+-f, --pe-file1, Input paired-end forward fastq file (Input files must have same number of records)\n\
+-r, --pe-file2, Input paired-end reverse fastq file\n\
+-o, --output-pe1, Output trimmed forward fastq file\n\
+-p, --output-pe2, Output trimmed reverse fastq file. Must use -s option.\n\n\
 Paired-end interleaved reads\n\
 ----------------------------\n");
-    fprintf(stderr,"-c, --pe-combo, Combined input paired-end fastq\n\
--m, --output-combo, Output combined paired-end fastq file. Must use -s option.\n\
--M, --output-combo-all, Output combined paired-end fastq file with any discarded read written to output file as a single N. Cannot be used with the -s option.\n\n\
+    fprintf(stderr,"-c, --pe-combo, Combined (interleaved) input paired-end fastq\n\
+-m, --output-combo, Output combined (interleaved) paired-end fastq file. Must use -s option.\n\
+-M, --output-combo-all, Output combined (interleaved) paired-end fastq file with any discarded read written to output file as a single N. Cannot be used with the -s option.\n\n\
 Global options\n\
 --------------\n\
 -t, --qual-type, Type of quality values (solexa (CASAVA < 1.3), illumina (CASAVA 1.3 to 1.7), sanger (which is CASAVA >= 1.8)) (required)\n");
