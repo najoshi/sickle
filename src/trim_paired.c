@@ -373,8 +373,8 @@ int paired_main(int argc, char *argv[]) {
             break;
         }
 
-        p1cut = sliding_window(fqrec1, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n);
-        p2cut = sliding_window(fqrec2, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n);
+        p1cut = sliding_window(fqrec1, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n, debug);
+        p2cut = sliding_window(fqrec2, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n, debug);
 
         if (debug) printf("p1cut: %d,%d\n", p1cut->five_prime_cut, p1cut->three_prime_cut);
         if (debug) printf("p2cut: %d,%d\n", p2cut->five_prime_cut, p2cut->three_prime_cut);

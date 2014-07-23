@@ -191,7 +191,7 @@ int single_main(int argc, char *argv[]) {
 
     while ((l = kseq_read(fqrec)) >= 0) {
 
-        p1cut = sliding_window(fqrec, qualtype, single_length_threshold, single_qual_threshold, no_fiveprime, trunc_n);
+        p1cut = sliding_window(fqrec, qualtype, single_length_threshold, single_qual_threshold, no_fiveprime, trunc_n, debug);
 
         if (debug) printf("P1cut: %d,%d\n", p1cut->five_prime_cut, p1cut->three_prime_cut);
 
