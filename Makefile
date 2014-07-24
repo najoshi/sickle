@@ -35,7 +35,7 @@ distclean: clean
 	rm -rf *.tar.gz
 
 dist:
-	tar -zcf $(ARCHIVE).tar.gz src Makefile
+	tar -zcf $(ARCHIVE).tar.gz src Makefile README.md sickle.xml LICENSE
 
 build: sliding.o trim_single.o trim_paired.o sickle.o print_record.o
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OPT) $? -o sickle $(LIBS)
