@@ -66,6 +66,11 @@ To build Sickle, enter:
     make
     make install
 
+In case configure is not included in your distribution, e.g. when cloning the
+source from github, run the following first:
+
+    ./bootstrap
+
 ## Usage
 
 Sickle has two modes to work with both paired-end and single-end
