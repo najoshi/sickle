@@ -30,7 +30,7 @@ int main (int argc, char *argv[]) {
 	}
 
 	if (strcmp (argv[1],"--version") == 0) {
-		fprintf(stdout, "%s version %0.2f\nCopyright (c) 2011 The Regents of University of California, Davis Campus.\n%s is free software and comes with ABSOLUTELY NO WARRANTY.\nDistributed under the MIT License.\n\nWritten by %s\n", PROGRAM_NAME, VERSION, PROGRAM_NAME, AUTHORS);
+		fprintf(stdout, "%s version %0.2f\nCopyright (c) 2011 The Regents of University of California, Davis Campus.\n%s is free software and comes with ABSOLUTELY NO WARRANTY.\nDistributed under the MIT License.\n\nWritten by %s\n", PROGRAM_NAME, PACKAGE_VERSION, PROGRAM_NAME, AUTHORS);
 
 		exit (EXIT_SUCCESS);
 

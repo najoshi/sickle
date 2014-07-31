@@ -31,8 +31,8 @@ __KSEQ_BASIC(gzFile)
 #define AUTHORS "Nikhil Joshi, UC Davis Bioinformatics Core\n"
 #endif
 
-#ifndef VERSION
-#define VERSION 0.0
+#ifndef PACKAGE_VERSION
+#define PACKAGE_VERSION 0.0
 #endif
 
 /* Options drawn from GNU's coreutils/src/system.h */
