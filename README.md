@@ -62,9 +62,9 @@ Sickle also requires Zlib, which can be obtained at
 
 To build Sickle, enter:
 
+    ./configure
     make
-
-Then, copy or move "sickle" to a directory in your $PATH.
+    make install
 
 ## Usage
 
