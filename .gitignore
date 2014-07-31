@@ -24,6 +24,7 @@ Makefile.in
 # configure
 
 Makefile
+/config.h
 /config.log
 /config.status
 .deps
