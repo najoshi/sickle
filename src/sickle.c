@@ -8,6 +8,10 @@
 #include <string.h>
 #include "sickle.h"
 
+#if HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 void main_usage (int status) {
 
 	fprintf (stdout, "\nUsage: %s <command> [options]\n\
@@ -17,7 +21,7 @@ pe\tpaired-end sequence trimming\n\
 se\tsingle-end sequence trimming\n\
 \n\
 --help, display this help and exit\n\
---version, output version information and exit\n\n", PROGRAM_NAME);
+--version, output version information and exit\n\n", PACKAGE_NAME);
 
 	exit (status);
 }
@@ -30,7 +34,7 @@ int main (int argc, char *argv[]) {
 	}
 
 	if (strcmp (argv[1],"--version") == 0) {
-		fprintf(stdout, "%s version %0.2f\nCopyright (c) 2011 The Regents of University of California, Davis Campus.\n%s is free software and comes with ABSOLUTELY NO WARRANTY.\nDistributed under the MIT License.\n\nWritten by %s\n", PROGRAM_NAME, VERSION, PROGRAM_NAME, AUTHORS);
+		fprintf(stdout, "%s version %s\nCopyright (c) 2011 The Regents of University of California, Davis Campus.\n%s is free software and comes with ABSOLUTELY NO WARRANTY.\nDistributed under the MIT License.\n\nWritten by %s\n", PACKAGE_NAME, PACKAGE_VERSION, PACKAGE_NAME, AUTHORS);
 
 		exit (EXIT_SUCCESS);
 

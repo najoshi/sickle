@@ -9,6 +9,10 @@
 #include "kseq.h"
 #include "print_record.h"
 
+#if HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 __KS_GETC(gzread, BUFFER_SIZE)
 __KS_GETUNTIL(gzread, BUFFER_SIZE)
 __KSEQ_READ
@@ -40,11 +44,11 @@ static struct option paired_long_options[] = {
 void paired_usage (int status, char *msg) {
 
     fprintf(stderr, "\nIf you have separate files for forward and reverse reads:\n");
-    fprintf(stderr, "Usage: %s pe [options] -f <paired-end forward fastq file> -r <paired-end reverse fastq file> -t <quality type> -o <trimmed PE forward file> -p <trimmed PE reverse file> -s <trimmed singles file>\n\n", PROGRAM_NAME);
+    fprintf(stderr, "Usage: %s pe [options] -f <paired-end forward fastq file> -r <paired-end reverse fastq file> -t <quality type> -o <trimmed PE forward file> -p <trimmed PE reverse file> -s <trimmed singles file>\n\n", PACKAGE_NAME);
     fprintf(stderr, "If you have one file with interleaved forward and reverse reads:\n");
     fprintf(stderr, "Usage: %s pe [options] -c <interleaved input file> -t <quality type> -m <interleaved trimmed paired-end output> -s <trimmed singles file>\n\n\
 If you have one file with interleaved reads as input and you want ONLY one interleaved file as output:\n\
-Usage: %s pe [options] -c <interleaved input file> -t <quality type> -M <interleaved trimmed output>\n\n", PROGRAM_NAME, PROGRAM_NAME);
+Usage: %s pe [options] -c <interleaved input file> -t <quality type> -M <interleaved trimmed output>\n\n", PACKAGE_NAME, PACKAGE_NAME);
     fprintf(stderr, "Options:\n\
 Paired-end separated reads\n\
 --------------------------\n\
@@ -219,7 +223,7 @@ int paired_main(int argc, char *argv[]) {
             break;
 
         case_GETOPT_HELP_CHAR(paired_usage);
-        case_GETOPT_VERSION_CHAR(PROGRAM_NAME, VERSION, AUTHORS);
+        case_GETOPT_VERSION_CHAR(PACKAGE_NAME, PACKAGE_VERSION, AUTHORS);
 
         case '?':
             paired_usage(EXIT_FAILURE, NULL);

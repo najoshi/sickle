@@ -23,16 +23,8 @@ __KS_BASIC(gzFile, BUFFER_SIZE)
 __KSEQ_TYPE(gzFile)
 __KSEQ_BASIC(gzFile)
 
-#ifndef PROGRAM_NAME
-#define PROGRAM_NAME "sickle"
-#endif
-
 #ifndef AUTHORS
 #define AUTHORS "Nikhil Joshi, UC Davis Bioinformatics Core\n"
-#endif
-
-#ifndef VERSION
-#define VERSION 0.0
 #endif
 
 /* Options drawn from GNU's coreutils/src/system.h */
@@ -52,7 +44,7 @@ Usage_call(EXIT_SUCCESS, NULL); \
 break;
 #define case_GETOPT_VERSION_CHAR(Program_name, Version, Authors) \
 case GETOPT_VERSION_CHAR: \
-fprintf(stdout, "%s version %0.3f\nCopyright (c) 2011 The Regents " \
+fprintf(stdout, "%s version %s\nCopyright (c) 2011 The Regents " \
 "of University of California, Davis Campus.\n" \
 "%s is free software and comes with ABSOLUTELY NO WARRANTY.\n"\
 "Distributed under the MIT License.\n\nWritten by %s\n", \
