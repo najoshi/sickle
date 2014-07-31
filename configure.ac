@@ -27,5 +27,7 @@ AC_FUNC_REALLOC
 AC_CHECK_FUNCS([strstr])
 
 AC_CONFIG_FILES([Makefile
-                 src/Makefile])
+                 src/Makefile
+                 test/Makefile])
+
 AC_OUTPUT
