@@ -1,4 +1,4 @@
-AM_CFLAGS = -Wall -pedantic -DPACKAGE_VERSION=$(PACKAGE_VERSION) -O3
+AM_CFLAGS = -Wall -pedantic -DVERSION=$(PACKAGE_VERSION) -O3
 
 bin_PROGRAMS = sickle
 

@@ -219,7 +219,7 @@ int paired_main(int argc, char *argv[]) {
             break;
 
         case_GETOPT_HELP_CHAR(paired_usage);
-        case_GETOPT_VERSION_CHAR(PROGRAM_NAME, PACKAGE_VERSION, AUTHORS);
+        case_GETOPT_VERSION_CHAR(PROGRAM_NAME, VERSION, AUTHORS);
 
         case '?':
             paired_usage(EXIT_FAILURE, NULL);
