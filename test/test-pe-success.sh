@@ -6,7 +6,7 @@ FILE_S=$(mktemp)
 
 trap "rm -f $FILE_O $FILE_P $FILE_S" EXIT
 
-sickle pe \
+../src/sickle pe \
   -t illumina \
   -f "$(dirname "$0")"/test.f.fastq \
   -r "$(dirname "$0")"/test.r.fastq \
