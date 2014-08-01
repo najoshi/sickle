@@ -522,5 +522,11 @@ int paired_main(int argc, char *argv[]) {
         }
     }
 
+    free(infn1);
+    free(infn2);
+    free(outfn1);
+    free(outfn2);
+    free(sfn);
+
     return EXIT_SUCCESS;
 }                               /* end of paired_main() */

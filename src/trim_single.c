@@ -228,5 +228,8 @@ int single_main(int argc, char *argv[]) {
     if (!gzip_output) fclose(outfile);
     else gzclose(outfile_gzip);
 
+    free(infn);
+    free(outfn);
+
     return EXIT_SUCCESS;
 }
