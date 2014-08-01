@@ -1,4 +1,4 @@
-TESTS = test-se-success.sh test-pe-success.sh
+TESTS = sickle-se-success.sh sickle-pe-success.sh
 
 EXTRA_DIST = $(TESTS) test.fastq test.f.fastq test.r.fastq
 
