@@ -1,7 +1,5 @@
 #!/bin/bash
 
-pwd
-
 FILE_O=$(mktemp)
 FILE_P=$(mktemp)
 FILE_S=$(mktemp)
