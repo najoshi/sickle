@@ -16,7 +16,7 @@ __KSEQ_READ
 int paired_qual_threshold = 20;
 int paired_length_threshold = 20;
 
-static const char *paired_short_options = "df:r:c:t:o:p:m:M:s:q:l:w:xng";
+static const char *paired_short_options = "df:r:c:t:o:p:m:M:s:q:l:w:xnNg";
 static struct option paired_long_options[] = {
     { "qual-type",           required_argument, NULL, 't' },
     { "pe-file1",            required_argument, NULL, 'f' },
@@ -31,6 +31,7 @@ static struct option paired_long_options[] = {
     { "window",              required_argument, NULL, 'w' },
     { "no-fiveprime",        no_argument,       NULL, 'x' },
     { "truncate-n",          no_argument,       NULL, 'n' },
+    { "drop-n",              no_argument,       NULL, 'N' },
     { "gzip-output",         no_argument,       NULL, 'g' },
     { "output-combo-all",    required_argument, NULL, 'M' },
     { "quiet",               no_argument,       NULL, 'z' },
@@ -98,6 +99,7 @@ void paired_usage (int status, char *msg) {
         "                               window size of 0.1 of the read length.\n"
         "-x, --no-fiveprime             Don't do five prime trimming.\n"
         "-n, --truncate-n               Truncate sequences at position of first N.\n"
+        "-N, --drop-n                   Discard sequences containing an N.\n"
         "-g, --gzip-output              Output gzipped files.\n"
         "--quiet                        Do not output trimming info\n"
         "--help                         Display this help and exit\n"
@@ -157,6 +159,7 @@ int paired_main(int argc, char *argv[]) {
     int quiet = 0;
     int no_fiveprime = 0;
     int trunc_n = 0;
+    int drop_n = 0;
     int gzip_output = 0;
     int combo_all=0;
     int combo_s=0;
@@ -258,6 +261,10 @@ int paired_main(int argc, char *argv[]) {
             trunc_n = 1;
             break;
 
+        case 'N':
+            drop_n = 1;
+            break;
+
         case 'g':
             gzip_output = 1;
             break;
@@ -286,6 +293,11 @@ int paired_main(int argc, char *argv[]) {
     /* required: qualtype */
     if (qualtype == -1) {
         paired_usage(EXIT_FAILURE, "****Error: Quality type is required.");
+    }
+
+    if (trunc_n && drop_n) {
+        fprintf(stderr, "****Error: cannot specify both --truncate-n and --drop-n\n\n");
+        return EXIT_FAILURE;
     }
 
     /* make sure minimum input filenames are specified */
@@ -426,8 +438,8 @@ int paired_main(int argc, char *argv[]) {
             break;
         }
 
-        p1cut = sliding_window(fqrec1, qualtype, paired_length_threshold, paired_qual_threshold, window_size, no_fiveprime, trunc_n, debug);
-        p2cut = sliding_window(fqrec2, qualtype, paired_length_threshold, paired_qual_threshold, window_size, no_fiveprime, trunc_n, debug);
+        p1cut = sliding_window(fqrec1, qualtype, paired_length_threshold, paired_qual_threshold, window_size, no_fiveprime, trunc_n, drop_n, debug);
+        p2cut = sliding_window(fqrec2, qualtype, paired_length_threshold, paired_qual_threshold, window_size, no_fiveprime, trunc_n, drop_n, debug);
         total += 2;
 
         if (debug) printf("p1cut: %d,%d\n", p1cut->five_prime_cut, p1cut->three_prime_cut);
@@ -532,7 +544,7 @@ int paired_main(int argc, char *argv[]) {
     }
 
     if (!quiet) {
-        if (infn1 && infn2) fprintf(stdout, "\nPE forwrd file: %s\nPE reverse file: %s\n", infn1, infn2);
+        if (infn1 && infn2) fprintf(stdout, "\nPE forward file: %s\nPE reverse file: %s\n", infn1, infn2);
         if (infnc) fprintf(stdout, "\nPE interleaved file: %s\n", infnc);
         fprintf(stdout, "\nTotal input FastQ records: %d (%d pairs)\n", total, (total / 2));
         fprintf(stdout, "\nFastQ paired records kept: %d (%d pairs)\n", kept_p, (kept_p / 2));
