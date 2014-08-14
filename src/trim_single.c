@@ -15,7 +15,7 @@ __KSEQ_READ
 int single_qual_threshold = 20;
 int single_length_threshold = 20;
 
-static const char *single_short_options = "df:t:o:q:l:zxng";
+static const char *single_short_options = "df:t:o:q:l:zxnNg";
 static struct option single_long_options[] = {
     { "fastq-file",         required_argument, 0, 'f' },
     { "output-file",        required_argument, 0, 'o' },
@@ -25,6 +25,7 @@ static struct option single_long_options[] = {
     { "no-fiveprime",       no_argument,       0, 'x' },
     { "trunc-n",            no_argument,       0, 'n' },
     { "truncate-n",         no_argument,       0, 'n' },
+    { "drop-n",             no_argument,       0, 'N' },
     { "gzip-output",        no_argument,       0, 'g' },
     { "quiet",              no_argument,       0, 'z' },
     { "debug",              no_argument,       0, 'd' },
@@ -55,6 +56,7 @@ void single_usage(int status, char *msg) {
         "                             trimming. Default %4$d.\n"
         "-x, --no-fiveprime           Don't do five prime trimming.\n"
         "-n, --truncate-n             Truncate sequences at position of first N.\n"
+        "-N, --drop-n                 Discard sequences containing an N.\n"
         "-g, --gzip-output            Output gzipped files.\n"
         "--quiet                      Do not output trimming info\n"
         "--help                       Display this help and exit\n"
@@ -94,6 +96,7 @@ int single_main(int argc, char *argv[]) {
     int quiet = 0;
     int no_fiveprime = 0;
     int trunc_n = 0;
+    int drop_n = 0;
     int gzip_output = 0;
     int total=0;
 
@@ -155,6 +158,10 @@ int single_main(int argc, char *argv[]) {
             trunc_n = 1;
             break;
 
+        case 'N':
+            drop_n = 1;
+            break;
+
         case 'g':
             gzip_output = 1;
             break;
@@ -210,12 +217,17 @@ int single_main(int argc, char *argv[]) {
         }
     }
 
+    if (trunc_n && drop_n) {
+        fprintf(stderr, "****Error: cannot specify both --truncate-n and --drop-n\n\n");
+        return EXIT_FAILURE;
+    }
+
 
     fqrec = kseq_init(se);
 
     while ((l = kseq_read(fqrec)) >= 0) {
 
-        p1cut = sliding_window(fqrec, qualtype, single_length_threshold, single_qual_threshold, no_fiveprime, trunc_n, debug);
+        p1cut = sliding_window(fqrec, qualtype, single_length_threshold, single_qual_threshold, no_fiveprime, trunc_n, drop_n, debug);
         total++;
 
         if (debug) printf("P1cut: %d,%d\n", p1cut->five_prime_cut, p1cut->three_prime_cut);

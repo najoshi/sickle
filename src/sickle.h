@@ -98,6 +98,6 @@ typedef struct __cutsites_ {
 /* Function Prototypes */
 int single_main (int argc, char *argv[]);
 int paired_main (int argc, char *argv[]);
-cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int qual_threshold, int no_fiveprime, int trunc_n, int debug);
+cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int qual_threshold, int no_fiveprime, int trunc_n, int drop_n, int debug);
 
 #endif /*SICKLE_H*/

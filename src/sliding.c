@@ -32,7 +32,7 @@ int get_quality_num (char qualchar, int qualtype, kseq_t *fqrec, int pos) {
 }
 
 
-cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int qual_threshold, int no_fiveprime, int trunc_n, int debug) {
+cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int qual_threshold, int no_fiveprime, int trunc_n, int drop_n, int debug) {
 
 	int window_size = (int) (0.1 * fqrec->seq.l);
 	int i,j;
@@ -112,10 +112,14 @@ cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int
 	}
 
 
-    /* If truncate N option is selected, and sequence has Ns, then */
-    /* change 3' cut site to be the base before the first N */
-    if (trunc_n && ((npos = strstr(fqrec->seq.s, "N")) || (npos = strstr(fqrec->seq.s, "n")))) {
-        three_prime_cut = npos - fqrec->seq.s;
+    /* If truncate N option is selected, and sequence has Ns, then
+     * change 3' cut site to be the base before the first N.
+     * If drop N option is selected, omit the sequence. */
+    if ((npos = strstr(fqrec->seq.s, "N")) || (npos = strstr(fqrec->seq.s, "n"))) {
+        if (trunc_n)
+            three_prime_cut = npos - fqrec->seq.s;
+        else if (drop_n)
+            three_prime_cut = five_prime_cut = -1;
     }
 
     /* if cutting length is less than threshold then return -1 for both */

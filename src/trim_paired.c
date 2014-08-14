@@ -16,7 +16,7 @@ __KSEQ_READ
 int paired_qual_threshold = 20;
 int paired_length_threshold = 20;
 
-static const char *paired_short_options = "df:r:c:t:o:p:m:M:s:q:l:xng";
+static const char *paired_short_options = "df:r:c:t:o:p:m:M:s:q:l:xnNg";
 static struct option paired_long_options[] = {
     { "qual-type",           required_argument, 0, 't' },
     { "pe-file1",            required_argument, 0, 'f' },
@@ -30,6 +30,7 @@ static struct option paired_long_options[] = {
     { "length-threshold",    required_argument, 0, 'l' },
     { "no-fiveprime",        no_argument,       0, 'x' },
     { "truncate-n",          no_argument,       0, 'n' },
+    { "drop-n",              no_argument,       0, 'N' },
     { "gzip-output",         no_argument,       0, 'g' },
     { "output-combo-all",    required_argument, 0, 'M' },
     { "quiet",               no_argument,       0, 'z' },
@@ -95,6 +96,7 @@ void paired_usage (int status, char *msg) {
         "                               trimming. Default %4$d.\n"
         "-x, --no-fiveprime             Don't do five prime trimming.\n"
         "-n, --truncate-n               Truncate sequences at position of first N.\n"
+        "-N, --drop-n                   Discard sequences containing an N.\n"
         "-g, --gzip-output              Output gzipped files.\n"
         "--quiet                        Do not output trimming info\n"
         "--help                         Display this help and exit\n"
@@ -154,6 +156,7 @@ int paired_main(int argc, char *argv[]) {
     int quiet = 0;
     int no_fiveprime = 0;
     int trunc_n = 0;
+    int drop_n = 0;
     int gzip_output = 0;
     int combo_all=0;
     int combo_s=0;
@@ -246,6 +249,10 @@ int paired_main(int argc, char *argv[]) {
             trunc_n = 1;
             break;
 
+        case 'N':
+            drop_n = 1;
+            break;
+
         case 'g':
             gzip_output = 1;
             break;
@@ -274,6 +281,11 @@ int paired_main(int argc, char *argv[]) {
     /* required: qualtype */
     if (qualtype == -1) {
         paired_usage(EXIT_FAILURE, "****Error: Quality type is required.");
+    }
+
+    if (trunc_n && drop_n) {
+        fprintf(stderr, "****Error: cannot specify both --truncate-n and --drop-n\n\n");
+        return EXIT_FAILURE;
     }
 
     /* make sure minimum input filenames are specified */
@@ -414,8 +426,8 @@ int paired_main(int argc, char *argv[]) {
             break;
         }
 
-        p1cut = sliding_window(fqrec1, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n, debug);
-        p2cut = sliding_window(fqrec2, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n, debug);
+        p1cut = sliding_window(fqrec1, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n, drop_n, debug);
+        p2cut = sliding_window(fqrec2, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n, drop_n, debug);
         total += 2;
 
         if (debug) printf("p1cut: %d,%d\n", p1cut->five_prime_cut, p1cut->three_prime_cut);
