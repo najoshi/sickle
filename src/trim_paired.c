@@ -16,6 +16,7 @@ __KSEQ_READ
 int paired_qual_threshold = 20;
 int paired_length_threshold = 20;
 
+static const char *paired_short_options = "df:r:c:t:o:p:m:M:s:q:l:xng";
 static struct option paired_long_options[] = {
     {"qual-type", required_argument, 0, 't'},
     {"pe-file1", required_argument, 0, 'f'},
@@ -122,7 +123,7 @@ int paired_main(int argc, char *argv[]) {
 
     while (1) {
         int option_index = 0;
-        optc = getopt_long(argc, argv, "df:r:c:t:o:p:m:M:s:q:l:xng", paired_long_options, &option_index);
+        optc = getopt_long(argc, argv, paired_short_options, paired_long_options, &option_index);
 
         if (optc == -1)
             break;
