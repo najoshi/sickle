@@ -15,6 +15,7 @@ __KSEQ_READ
 int single_qual_threshold = 20;
 int single_length_threshold = 20;
 
+static const char *single_short_options = "df:t:o:q:l:zxng";
 static struct option single_long_options[] = {
     { "fastq-file",         required_argument, NULL, 'f' },
     { "output-file",        required_argument, NULL, 'o' },
@@ -76,7 +77,7 @@ int single_main(int argc, char *argv[]) {
 
     while (1) {
         int option_index = 0;
-        optc = getopt_long(argc, argv, "df:t:o:q:l:zxng", single_long_options, &option_index);
+        optc = getopt_long(argc, argv, single_short_options, single_long_options, &option_index);
 
         if (optc == -1)
             break;
