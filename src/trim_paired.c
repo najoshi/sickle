@@ -40,40 +40,78 @@ static struct option paired_long_options[] = {
 };
 
 void paired_usage (int status, char *msg) {
+    static const char *usage_format =
+        "\n"
+        "If you have separate files for forward and reverse reads:\n"
+        "  Usage: %1$s pe [options] -f <paired-end forward fastq file>\n"
+        "         %2$*3$s           -r <paired-end reverse fastq file>\n"
+        "         %2$*3$s           -t <quality type>\n"
+        "         %2$*3$s           -o <trimmed PE forward file>\n"
+        "         %2$*3$s           -p <trimmed PE reverse file>\n"
+        "         %2$*3$s           -s <trimmed singles file>\n"
+        "\n"
+        "If you have one file with interleaved forward and reverse reads:\n"
+        "  Usage: %1$s pe [options] -c <interleaved input file>\n"
+        "         %2$*3$s           -t <quality type>\n"
+        "         %2$*3$s           -m <interleaved trimmed paired-end output>\n"
+        "         %2$*3$s           -s <trimmed singles file>\n"
+        "\n"
+        "If you have one file with interleaved reads as input and you want\n"
+        "ONLY one interleaved file as output:\n"
+        "  Usage: %1$s pe [options] -c <interleaved input file>\n"
+        "         %2$*3$s           -t <quality type>\n"
+        "         %2$*3$s           -M <interleaved trimmed output>\n"
+        "\n"
+        "Options:\n"
+        "\n"
+        "Paired-end separated reads\n"
+        "--------------------------\n"
+        "-f, --pe-file1     Input paired-end forward fastq file\n"
+        "-r, --pe-file2     Input paired-end reverse fastq file\n"
+        "                   (input files must have same number of records)\n"
+        "-o, --output-pe1   Output trimmed forward fastq file\n"
+        "-p, --output-pe2   Output trimmed reverse fastq file. Must use -s option.\n"
+        "\n"
+        "Paired-end interleaved reads\n"
+        "----------------------------\n"
+        "-c, --pe-combo          Combined (interleaved) input paired-end fastq\n"
+        "-m, --output-combo      Output combined (interleaved) paired-end fastq file.\n"
+        "                        Must use -s option.\n"
+        "-M, --output-combo-all  Output combined (interleaved) paired-end fastq file\n"
+        "                        with any discarded read written to output file as a\n"
+        "                        single N. Cannot be used with the -s option.\n"
+        "\n"
+        "Global options\n"
+        "--------------\n"
+        "-t TYPE, --qual-type TYPE      Type of quality values, one of:\n"
+        "                                   solexa (CASAVA < 1.3)\n"
+        "                                   illumina (CASAVA 1.3 to 1.7)\n"
+        "                                   sanger (which is CASAVA >= 1.8)\n"
+        "                               (required)\n"
+        "-s FILE, --output-single FILE  Output trimmed singles fastq file\n"
+        "-q #, --qual-threshold #       Threshold for trimming based on average quality\n"
+        "                               in a window. Default %3$d.\n"
+        "-l #, --length-threshold #     Threshold to keep a read based on length after\n"
+        "                               trimming. Default %4$d.\n"
+        "-x, --no-fiveprime             Don't do five prime trimming.\n"
+        "-n, --truncate-n               Truncate sequences at position of first N.\n"
+        "-g, --gzip-output              Output gzipped files.\n"
+        "--quiet                        Do not output trimming info\n"
+        "--help                         Display this help and exit\n"
+        "--version                      Output version information and exit\n"
+    ;
 
-    fprintf(stderr, "\nIf you have separate files for forward and reverse reads:\n");
-    fprintf(stderr, "Usage: %s pe [options] -f <paired-end forward fastq file> -r <paired-end reverse fastq file> -t <quality type> -o <trimmed PE forward file> -p <trimmed PE reverse file> -s <trimmed singles file>\n\n", PROGRAM_NAME);
-    fprintf(stderr, "If you have one file with interleaved forward and reverse reads:\n");
-    fprintf(stderr, "Usage: %s pe [options] -c <interleaved input file> -t <quality type> -m <interleaved trimmed paired-end output> -s <trimmed singles file>\n\n\
-If you have one file with interleaved reads as input and you want ONLY one interleaved file as output:\n\
-Usage: %s pe [options] -c <interleaved input file> -t <quality type> -M <interleaved trimmed output>\n\n", PROGRAM_NAME, PROGRAM_NAME);
-    fprintf(stderr, "Options:\n\
-Paired-end separated reads\n\
---------------------------\n\
--f, --pe-file1, Input paired-end forward fastq file (Input files must have same number of records)\n\
--r, --pe-file2, Input paired-end reverse fastq file\n\
--o, --output-pe1, Output trimmed forward fastq file\n\
--p, --output-pe2, Output trimmed reverse fastq file. Must use -s option.\n\n\
-Paired-end interleaved reads\n\
-----------------------------\n");
-    fprintf(stderr,"-c, --pe-combo, Combined (interleaved) input paired-end fastq\n\
--m, --output-combo, Output combined (interleaved) paired-end fastq file. Must use -s option.\n\
--M, --output-combo-all, Output combined (interleaved) paired-end fastq file with any discarded read written to output file as a single N. Cannot be used with the -s option.\n\n\
-Global options\n\
---------------\n\
--t, --qual-type, Type of quality values (solexa (CASAVA < 1.3), illumina (CASAVA 1.3 to 1.7), sanger (which is CASAVA >= 1.8)) (required)\n");
-    fprintf(stderr, "-s, --output-single, Output trimmed singles fastq file\n\
--q, --qual-threshold, Threshold for trimming based on average quality in a window. Default 20.\n\
--l, --length-threshold, Threshold to keep a read based on length after trimming. Default 20.\n\
--x, --no-fiveprime, Don't do five prime trimming.\n\
--n, --truncate-n, Truncate sequences at position of first N.\n");
+    if (msg) fprintf( STDERR_OR_OUT(status), "%s\n", msg );
 
+    fprintf(
+        STDERR_OR_OUT(status),
+        usage_format,
+        PROGRAM_NAME,
+        "", strlen(PROGRAM_NAME) + 3, // +3 makes it possible to keep text visually aligned in the format string itself
+        paired_qual_threshold,
+        paired_length_threshold
+    );
 
-    fprintf(stderr, "-g, --gzip-output, Output gzipped files.\n--quiet, do not output trimming info\n\
---help, display this help and exit\n\
---version, output version information and exit\n\n");
-
-    if (msg) fprintf(stderr, "%s\n\n", msg);
     exit(status);
 }
 
