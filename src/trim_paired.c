@@ -17,24 +17,25 @@ int paired_qual_threshold = 20;
 int paired_length_threshold = 20;
 
 static struct option paired_long_options[] = {
-    {"qual-type", required_argument, 0, 't'},
-    {"pe-file1", optional_argument, 0, 'f'},
-    {"pe-file2", optional_argument, 0, 'r'},
-    {"pe-combo", optional_argument, 0, 'c'},
-    {"output-pe1", optional_argument, 0, 'o'},
-    {"output-pe2", optional_argument, 0, 'p'},
-    {"output-single", optional_argument, 0, 's'},
-    {"output-combo", optional_argument, 0, 'm'},
-    {"qual-threshold", optional_argument, 0, 'q'},
-    {"length-threshold", optional_argument, 0, 'l'},
-    {"no-fiveprime", optional_argument, 0, 'x'},
-    {"truncate-n", optional_argument, 0, 'n'},
-    {"gzip-output", optional_argument, 0, 'g'},
-    {"output-combo-all", optional_argument, 0, 'M'},
-    {"quiet", optional_argument, 0, 'z'},
-    {GETOPT_HELP_OPTION_DECL},
-    {GETOPT_VERSION_OPTION_DECL},
-    {NULL, 0, NULL, 0}
+    { "qual-type",           required_argument, NULL, 't' },
+    { "pe-file1",            required_argument, NULL, 'f' },
+    { "pe-file2",            required_argument, NULL, 'r' },
+    { "pe-combo",            required_argument, NULL, 'c' },
+    { "output-pe1",          required_argument, NULL, 'o' },
+    { "output-pe2",          required_argument, NULL, 'p' },
+    { "output-single",       required_argument, NULL, 's' },
+    { "output-combo",        required_argument, NULL, 'm' },
+    { "qual-threshold",      required_argument, NULL, 'q' },
+    { "length-threshold",    required_argument, NULL, 'l' },
+    { "no-fiveprime",        no_argument,       NULL, 'x' },
+    { "truncate-n",          no_argument,       NULL, 'n' },
+    { "gzip-output",         no_argument,       NULL, 'g' },
+    { "output-combo-all",    required_argument, NULL, 'M' },
+    { "quiet",               no_argument,       NULL, 'z' },
+    { "debug",               no_argument,       NULL, 'd' },
+    { GETOPT_HELP_OPTION_DECL },
+    { GETOPT_VERSION_OPTION_DECL },
+    { NULL, 0, NULL, 0 }
 };
 
 void paired_usage (int status, char *msg) {

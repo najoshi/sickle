@@ -16,18 +16,18 @@ int single_qual_threshold = 20;
 int single_length_threshold = 20;
 
 static struct option single_long_options[] = {
-    {"fastq-file", required_argument, 0, 'f'},
-    {"output-file", required_argument, 0, 'o'},
-    {"qual-type", required_argument, 0, 't'},
-    {"qual-threshold", optional_argument, 0, 'q'},
-    {"length-threshold", optional_argument, 0, 'l'},
-    {"no-fiveprime", optional_argument, 0, 'x'},
-    {"discard-n", optional_argument, 0, 'n'},
-    {"gzip-output", optional_argument, 0, 'g'},
-    {"quiet", optional_argument, 0, 'z'},
-    {GETOPT_HELP_OPTION_DECL},
-    {GETOPT_VERSION_OPTION_DECL},
-    {NULL, 0, NULL, 0}
+    { "fastq-file",         required_argument, NULL, 'f' },
+    { "output-file",        required_argument, NULL, 'o' },
+    { "qual-type",          required_argument, NULL, 't' },
+    { "qual-threshold",     required_argument, NULL, 'q' },
+    { "length-threshold",   required_argument, NULL, 'l' },
+    { "no-fiveprime",       no_argument,       NULL, 'x' },
+    { "truncate-n",         no_argument,       NULL, 'n' },
+    { "gzip-output",        no_argument,       NULL, 'g' },
+    { "quiet",              no_argument,       NULL, 'z' },
+    { GETOPT_HELP_OPTION_DECL },
+    { GETOPT_VERSION_OPTION_DECL },
+    { NULL, 0, NULL, 0 }
 };
 
 void single_usage(int status, char *msg) {
