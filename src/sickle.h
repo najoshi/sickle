@@ -61,6 +61,8 @@ exit(EXIT_SUCCESS); \
 break;
 /* end code drawn from system.h */
 
+#define STDERR_OR_OUT(status) (status == EXIT_SUCCESS ? stdout : stderr)
+
 typedef enum {
   PHRED,
   SANGER,

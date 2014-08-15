@@ -34,24 +34,44 @@ static struct option single_long_options[] = {
 };
 
 void single_usage(int status, char *msg) {
+    static const char *usage_format =
+        "\n"
+        "Usage: %1$s se [options] -f <fastq sequence file>\n"
+        "       %2$*3$s           -t <quality type>\n"
+        "       %2$*3$s           -o <trimmed fastq file>\n"
+        "\n"
+        "Options:\n"
+        "\n"
+        "-f FILE, --fastq-file FILE   Input fastq file (required)\n"
+        "-o FILE, --output-file FILE  Output trimmed fastq file (required)\n"
+        "-t TYPE, --qual-type TYPE    Type of quality values, one of:\n"
+        "                                 solexa (CASAVA < 1.3)\n"
+        "                                 illumina (CASAVA 1.3 to 1.7)\n"
+        "                                 sanger (which is CASAVA >= 1.8)\n"
+        "                             (required)\n"
+        "-q #, --qual-threshold #     Threshold for trimming based on average quality\n"
+        "                             in a window. Default %3$d.\n"
+        "-l #, --length-threshold #   Threshold to keep a read based on length after\n"
+        "                             trimming. Default %4$d.\n"
+        "-x, --no-fiveprime           Don't do five prime trimming.\n"
+        "-n, --truncate-n             Truncate sequences at position of first N.\n"
+        "-g, --gzip-output            Output gzipped files.\n"
+        "--quiet                      Do not output trimming info\n"
+        "--help                       Display this help and exit\n"
+        "--version                    Output version information and exit\n"
+    ;
 
-    fprintf(stderr, "\nUsage: %s se [options] -f <fastq sequence file> -t <quality type> -o <trimmed fastq file>\n\
-\n\
-Options:\n\
--f, --fastq-file, Input fastq file (required)\n\
--t, --qual-type, Type of quality values (solexa (CASAVA < 1.3), illumina (CASAVA 1.3 to 1.7), sanger (which is CASAVA >= 1.8)) (required)\n\
--o, --output-file, Output trimmed fastq file (required)\n", PROGRAM_NAME);
+    if (msg) fprintf( STDERR_OR_OUT(status), "%s\n", msg );
 
-    fprintf(stderr, "-q, --qual-threshold, Threshold for trimming based on average quality in a window. Default 20.\n\
--l, --length-threshold, Threshold to keep a read based on length after trimming. Default 20.\n\
--x, --no-fiveprime, Don't do five prime trimming.\n\
--n, --truncate-n, Truncate sequences at position of first N.\n\
--g, --gzip-output, Output gzipped files.\n\
---quiet, Don't print out any trimming information\n\
---help, display this help and exit\n\
---version, output version information and exit\n\n");
+    fprintf(
+        STDERR_OR_OUT(status),
+        usage_format,
+        PROGRAM_NAME,
+        "", strlen(PROGRAM_NAME) + 3, // +3 makes it possible to keep text visually aligned in the format string itself
+        single_qual_threshold,
+        single_length_threshold
+    );
 
-    if (msg) fprintf(stderr, "%s\n\n", msg);
     exit(status);
 }
 
