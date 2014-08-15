@@ -25,6 +25,7 @@ static struct option single_long_options[] = {
     {"discard-n", no_argument, 0, 'n'},
     {"gzip-output", no_argument, 0, 'g'},
     {"quiet", no_argument, 0, 'z'},
+    {"debug", no_argument, 0, 'd'},
     {GETOPT_HELP_OPTION_DECL},
     {GETOPT_VERSION_OPTION_DECL},
     {NULL, 0, NULL, 0}

@@ -32,6 +32,7 @@ static struct option paired_long_options[] = {
     {"gzip-output", no_argument, 0, 'g'},
     {"output-combo-all", required_argument, 0, 'M'},
     {"quiet", no_argument, 0, 'z'},
+    {"debug", no_argument, 0, 'd'},
     {GETOPT_HELP_OPTION_DECL},
     {GETOPT_VERSION_OPTION_DECL},
     {NULL, 0, NULL, 0}
