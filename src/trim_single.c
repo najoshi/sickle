@@ -15,7 +15,7 @@ __KSEQ_READ
 int single_qual_threshold = 20;
 int single_length_threshold = 20;
 
-static const char *single_short_options = "df:t:o:q:l:zxng";
+static const char *single_short_options = "df:t:o:q:l:w:zxng";
 static struct option single_long_options[] = {
     { "fastq-file",         required_argument, 0, 'f' },
     { "output-file",        required_argument, 0, 'o' },
@@ -23,6 +23,7 @@ static struct option single_long_options[] = {
     { "qual-threshold",     required_argument, 0, 'q' },
     { "length-threshold",   required_argument, 0, 'l' },
     { "no-fiveprime",       no_argument,       0, 'x' },
+    { "window",             required_argument, 0, 'w' },
     { "trunc-n",            no_argument,       0, 'n' },
     { "truncate-n",         no_argument,       0, 'n' },
     { "gzip-output",        no_argument,       0, 'g' },
@@ -53,6 +54,8 @@ void single_usage(int status, char *msg) {
         "                             in a window. Default %3$d.\n"
         "-l #, --length-threshold #   Threshold to keep a read based on length after\n"
         "                             trimming. Default %4$d.\n"
+        "-w #, --window #             Fixed window size to use.  Default is a dynamic\n"
+        "                             window size of 0.1 of the read length.\n"
         "-x, --no-fiveprime           Don't do five prime trimming.\n"
         "-n, --truncate-n             Truncate sequences at position of first N.\n"
         "-g, --gzip-output            Output gzipped files.\n"
@@ -96,6 +99,7 @@ int single_main(int argc, char *argv[]) {
     int trunc_n = 0;
     int gzip_output = 0;
     int total=0;
+    int window_size = 0;
 
     while (1) {
         int option_index = 0;
@@ -143,6 +147,14 @@ int single_main(int argc, char *argv[]) {
             single_length_threshold = atoi(optarg);
             if (single_length_threshold < 0) {
                 fprintf(stderr, "Length threshold must be >= 0\n");
+                return EXIT_FAILURE;
+            }
+            break;
+
+        case 'w':
+            window_size = atoi(optarg);
+            if (window_size < 1) {
+                fprintf(stderr, "Fixed window size must be >= 1\n");
                 return EXIT_FAILURE;
             }
             break;
@@ -215,7 +227,7 @@ int single_main(int argc, char *argv[]) {
 
     while ((l = kseq_read(fqrec)) >= 0) {
 
-        p1cut = sliding_window(fqrec, qualtype, single_length_threshold, single_qual_threshold, no_fiveprime, trunc_n, debug);
+        p1cut = sliding_window(fqrec, qualtype, single_length_threshold, single_qual_threshold, window_size, no_fiveprime, trunc_n, debug);
         total++;
 
         if (debug) printf("P1cut: %d,%d\n", p1cut->five_prime_cut, p1cut->three_prime_cut);
