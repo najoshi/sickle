@@ -16,7 +16,7 @@ __KSEQ_READ
 int paired_qual_threshold = 20;
 int paired_length_threshold = 20;
 
-static const char *paired_short_options = "df:r:c:t:o:p:m:M:s:q:l:xng";
+static const char *paired_short_options = "df:r:c:t:o:p:m:M:s:q:l:w:xng";
 static struct option paired_long_options[] = {
     { "qual-type",           required_argument, NULL, 't' },
     { "pe-file1",            required_argument, NULL, 'f' },
@@ -28,6 +28,7 @@ static struct option paired_long_options[] = {
     { "output-combo",        required_argument, NULL, 'm' },
     { "qual-threshold",      required_argument, NULL, 'q' },
     { "length-threshold",    required_argument, NULL, 'l' },
+    { "window",              required_argument, NULL, 'w' },
     { "no-fiveprime",        no_argument,       NULL, 'x' },
     { "truncate-n",          no_argument,       NULL, 'n' },
     { "gzip-output",         no_argument,       NULL, 'g' },
@@ -93,6 +94,8 @@ void paired_usage (int status, char *msg) {
         "                               in a window. Default %3$d.\n"
         "-l #, --length-threshold #     Threshold to keep a read based on length after\n"
         "                               trimming. Default %4$d.\n"
+        "-w #, --window #               Fixed window size to use.  Default is a dynamic\n"
+        "                               window size of 0.1 of the read length.\n"
         "-x, --no-fiveprime             Don't do five prime trimming.\n"
         "-n, --truncate-n               Truncate sequences at position of first N.\n"
         "-g, --gzip-output              Output gzipped files.\n"
@@ -158,6 +161,7 @@ int paired_main(int argc, char *argv[]) {
     int combo_all=0;
     int combo_s=0;
     int total=0;
+    int window_size = 0;
 
     while (1) {
         int option_index = 0;
@@ -234,6 +238,14 @@ int paired_main(int argc, char *argv[]) {
             paired_length_threshold = atoi(optarg);
             if (paired_length_threshold < 0) {
                 fprintf(stderr, "Length threshold must be >= 0\n");
+                return EXIT_FAILURE;
+            }
+            break;
+
+        case 'w':
+            window_size = atoi(optarg);
+            if (window_size < 1) {
+                fprintf(stderr, "Fixed window size must be >= 1\n");
                 return EXIT_FAILURE;
             }
             break;
@@ -414,8 +426,8 @@ int paired_main(int argc, char *argv[]) {
             break;
         }
 
-        p1cut = sliding_window(fqrec1, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n, debug);
-        p2cut = sliding_window(fqrec2, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n, debug);
+        p1cut = sliding_window(fqrec1, qualtype, paired_length_threshold, paired_qual_threshold, window_size, no_fiveprime, trunc_n, debug);
+        p2cut = sliding_window(fqrec2, qualtype, paired_length_threshold, paired_qual_threshold, window_size, no_fiveprime, trunc_n, debug);
         total += 2;
 
         if (debug) printf("p1cut: %d,%d\n", p1cut->five_prime_cut, p1cut->three_prime_cut);
