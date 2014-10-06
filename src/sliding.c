@@ -113,14 +113,23 @@ cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int
 	}
 
 
-    /* If truncate N option is selected, and sequence has Ns, then
-     * change 3' cut site to be the base before the first N.
-     * If drop N option is selected, omit the sequence. */
-    if ((npos = strstr(fqrec->seq.s, "N")) || (npos = strstr(fqrec->seq.s, "n"))) {
-        if (trunc_n)
-            three_prime_cut = npos - fqrec->seq.s;
-        else if (drop_n)
-            three_prime_cut = five_prime_cut = -1;
+    /* If truncate N option is selected, and the trimmed sequence has Ns,
+     * then change 3' cut site to be the base before the first N.
+     * If drop N option is selected, omit the sequence.
+     */
+    if (five_prime_cut >= 0 && three_prime_cut >= 0 && three_prime_cut > five_prime_cut) {
+        int   cut_len = three_prime_cut - five_prime_cut;
+        char *trimmed = malloc(cut_len + 1);
+        strncpy(trimmed, fqrec->seq.s + five_prime_cut, cut_len);
+        trimmed[cut_len] = '\0';
+
+        if ((npos = strstr(trimmed, "N")) || (npos = strstr(trimmed, "n"))) {
+            if (trunc_n)
+                three_prime_cut = npos - trimmed + five_prime_cut;
+            else if (drop_n)
+                three_prime_cut = five_prime_cut = -1;
+        }
+        free(trimmed);
     }
 
     /* if cutting length is less than threshold then return -1 for both */
