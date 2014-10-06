@@ -1,0 +1,5 @@
+requires 'perl', '5.014';
+
+requires 'File::Basename';
+requires 'Capture::Tiny';
+requires 'Test::More';
