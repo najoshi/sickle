@@ -1,7 +1,7 @@
 PROGRAM_NAME = sickle
 VERSION = 1.33
 CC = gcc
-CFLAGS = -Wall -pedantic -DVERSION=$(VERSION)
+CFLAGS = -Wall -pedantic -std=c99 -DVERSION=$(VERSION)
 DEBUG = -g
 OPT = -O3
 ARCHIVE = $(PROGRAM_NAME)_$(VERSION)
