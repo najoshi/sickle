@@ -14,7 +14,10 @@ __KS_GETUNTIL(gzread, BUFFER_SIZE)
 __KSEQ_READ
 
 int paired_qual_threshold = 20;
+int orphan_qual_threshold = -1;
 int paired_length_threshold = 20;
+int orphan_length_threshold = -1;
+int recheck_orphans = 1;
 
 static struct option paired_long_options[] = {
     {"qual-type", required_argument, 0, 't'},
@@ -26,7 +29,9 @@ static struct option paired_long_options[] = {
     {"output-single", optional_argument, 0, 's'},
     {"output-combo", optional_argument, 0, 'm'},
     {"qual-threshold", optional_argument, 0, 'q'},
+    {"orphan-qual-threshold", optional_argument, 0, 'Q'},
     {"length-threshold", optional_argument, 0, 'l'},
+    {"orphan-length-threshold", optional_argument, 0, 'L'},
     {"no-fiveprime", optional_argument, 0, 'x'},
     {"truncate-n", optional_argument, 0, 'n'},
     {"gzip-output", optional_argument, 0, 'g'},
@@ -62,7 +67,9 @@ Global options\n\
 -t, --qual-type, Type of quality values (solexa (CASAVA < 1.3), illumina (CASAVA 1.3 to 1.7), sanger (which is CASAVA >= 1.8)) (required)\n");
     fprintf(stderr, "-s, --output-single, Output trimmed singles fastq file\n\
 -q, --qual-threshold, Threshold for trimming based on average quality in a window. Default 20.\n\
+-Q, --orphan-qual-threshold, Quality threshold to use for retaining a single mate if one (but not both) mate fails the paired-end quality threshold. Defaults to the value specified for --qual-threshold.\n\
 -l, --length-threshold, Threshold to keep a read based on length after trimming. Default 20.\n\
+-L, --orphan-length-threshold, Length threshold to use for retaining a single mate if one (but not both) mate fails the paired-end length threshold. Defaults to the value specified for --length-threshold.\n\
 -x, --no-fiveprime, Don't do five prime trimming.\n\
 -n, --truncate-n, Truncate sequences at position of first N.\n");
 
@@ -118,10 +125,10 @@ int paired_main(int argc, char *argv[]) {
     int combo_all=0;
     int combo_s=0;
     int total=0;
-
+    
     while (1) {
         int option_index = 0;
-        optc = getopt_long(argc, argv, "df:r:c:t:o:p:m:M:s:q:l:xng", paired_long_options, &option_index);
+        optc = getopt_long(argc, argv, "df:r:c:t:o:p:m:M:s:q:l:Q:L:xng", paired_long_options, &option_index);
 
         if (optc == -1)
             break;
@@ -189,11 +196,27 @@ int paired_main(int argc, char *argv[]) {
                 return EXIT_FAILURE;
             }
             break;
-
+        
+        case 'Q':
+            orphan_qual_threshold = atoi(optarg);
+            if (orphan_qual_threshold < 0) {
+                fprintf(stderr, "Orphan quality threshold must be >= 0\n");
+                return EXIT_FAILURE;
+            }
+            break;
+            
         case 'l':
             paired_length_threshold = atoi(optarg);
             if (paired_length_threshold < 0) {
                 fprintf(stderr, "Length threshold must be >= 0\n");
+                return EXIT_FAILURE;
+            }
+            break;
+
+        case 'L':
+            orphan_length_threshold = atoi(optarg);
+            if (orphan_length_threshold < 0) {
+                fprintf(stderr, "Orphan length threshold must be >= 0\n");
                 return EXIT_FAILURE;
             }
             break;
@@ -241,6 +264,20 @@ int paired_main(int argc, char *argv[]) {
         paired_usage(EXIT_FAILURE, "****Error: Must have either -f OR -c argument.");
     }
 
+    /* set orphan length and quality thresholds to paired thresholds if unset */
+    if ((orphan_qual_threshold == -1 || orphan_qual_threshold == paired_qual_threshold) && 
+            (orphan_length_threshold == -1 || orphan_length_threshold == paired_length_threshold)) {
+        recheck_orphans = 0;
+    }
+    else {
+        if (orphan_qual_threshold == -1) {
+            orphan_qual_threshold = paired_qual_threshold;
+        }
+        if (orphan_length_threshold == -1) {
+            orphan_length_threshold = paired_length_threshold;
+        }
+    }
+    
     if (infnc) {      /* using combined input file */
 
         if (infn1 || infn2 || outfn1 || outfn2) {
@@ -411,45 +448,76 @@ int paired_main(int argc, char *argv[]) {
         /* if only one sequence passed filter, then put its record in singles and discard the other */
         /* or put an "N" record in if that option was chosen. */
         else if (p1cut->three_prime_cut >= 0 && p2cut->three_prime_cut < 0) {
-            if (!gzip_output) {
-                if (combo_all) {
-                    print_record (combo, fqrec1, p1cut);
-                    print_record_N (combo, fqrec2, qualtype);
-                } else {
-                    print_record (single, fqrec1, p1cut);
+            int write_orphan = 1;
+            
+            if (recheck_orphans) {
+                p1cut = sliding_window(fqrec1, qualtype, orphan_length_threshold, orphan_qual_threshold, no_fiveprime, trunc_n, debug);
+                if (p1cut->three_prime_cut < 0) {
+                    if (debug) printf("p1 orhpan discarded");
+                    write_orphan = 0;
                 }
-            } else {
-                if (combo_all) {
-                    print_record_gzip (combo_gzip, fqrec1, p1cut);
-                    print_record_N_gzip (combo_gzip, fqrec2, qualtype);
-                } else {
-                    print_record_gzip (single_gzip, fqrec1, p1cut);
-                }
+                else if (debug) printf("p1 orhpan retained");
             }
+            
+            if (write_orphan) {
+                if (!gzip_output) {
+                    if (combo_all) {
+                        print_record (combo, fqrec1, p1cut);
+                        print_record_N (combo, fqrec2, qualtype);
+                    } else {
+                        print_record (single, fqrec1, p1cut);
+                    }
+                } else {
+                    if (combo_all) {
+                        print_record_gzip (combo_gzip, fqrec1, p1cut);
+                        print_record_N_gzip (combo_gzip, fqrec2, qualtype);
+                    } else {
+                        print_record_gzip (single_gzip, fqrec1, p1cut);
+                    }
+                }
 
-            kept_s1++;
-            discard_s2++;
+                kept_s1++;
+                discard_s2++;
+            }
+            else {
+                discard_s2 += 2;
+            }
         }
 
         else if (p1cut->three_prime_cut < 0 && p2cut->three_prime_cut >= 0) {
-            if (!gzip_output) {
-                if (combo_all) {
-                    print_record_N (combo, fqrec1, qualtype);
-                    print_record (combo, fqrec2, p2cut);
-                } else {
-                    print_record (single, fqrec2, p2cut);
+            int write_orphan = 1;
+            
+            if (recheck_orphans) {
+                p2cut = sliding_window(fqrec2, qualtype, orphan_length_threshold, orphan_qual_threshold, no_fiveprime, trunc_n, debug);
+                if (p2cut->three_prime_cut < 0) {
+                    if (debug) printf("p2 orhpan discarded");
+                    write_orphan = 0;
                 }
-            } else {
-                if (combo_all) {
-                    print_record_N_gzip (combo_gzip, fqrec1, qualtype);
-                    print_record_gzip (combo_gzip, fqrec2, p2cut);
-                } else {
-                    print_record_gzip (single_gzip, fqrec2, p2cut);
-                }
+                else if (debug) printf("p2 orhpan retained");
             }
-
-            kept_s2++;
-            discard_s1++;
+            
+            if (write_orphan) {
+                if (!gzip_output) {
+                    if (combo_all) {
+                        print_record_N (combo, fqrec1, qualtype);
+                        print_record (combo, fqrec2, p2cut);
+                    } else {
+                        print_record (single, fqrec2, p2cut);
+                    }
+                } else {
+                    if (combo_all) {
+                        print_record_N_gzip (combo_gzip, fqrec1, qualtype);
+                        print_record_gzip (combo_gzip, fqrec2, p2cut);
+                    } else {
+                        print_record_gzip (single_gzip, fqrec2, p2cut);
+                    }
+                }
+                kept_s2++;
+                discard_s1++;
+            }
+            else {
+                discard_s2 += 2;
+            }
 
         } else {
 
