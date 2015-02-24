@@ -19,12 +19,12 @@ static struct option single_long_options[] = {
     {"fastq-file", required_argument, 0, 'f'},
     {"output-file", required_argument, 0, 'o'},
     {"qual-type", required_argument, 0, 't'},
-    {"qual-threshold", optional_argument, 0, 'q'},
-    {"length-threshold", optional_argument, 0, 'l'},
-    {"no-fiveprime", optional_argument, 0, 'x'},
-    {"discard-n", optional_argument, 0, 'n'},
-    {"gzip-output", optional_argument, 0, 'g'},
-    {"quiet", optional_argument, 0, 'z'},
+    {"qual-threshold", required_argument, 0, 'q'},
+    {"length-threshold", required_argument, 0, 'l'},
+    {"no-fiveprime", no_argument, 0, 'x'},
+    {"discard-n", no_argument, 0, 'n'},
+    {"gzip-output", no_argument, 0, 'g'},
+    {"quiet", no_argument, 0, 'z'},
     {GETOPT_HELP_OPTION_DECL},
     {GETOPT_VERSION_OPTION_DECL},
     {NULL, 0, NULL, 0}
@@ -34,13 +34,10 @@ void single_usage(int status, char *msg) {
 
     fprintf(stderr, "\nUsage: %s se [options] -f <fastq sequence file> -t <quality type> -o <trimmed fastq file>\n\
 \n\
-If you are using the long-style options, make sure to use an equals sign (=) with the option:\n\
-Usage: sickle se [options] --fastq-file=<fastq sequence file> --qual-type=<quality type> --output-file=<trimmed fastq file>\n\n", PROGRAM_NAME);
-
-fprintf(stderr, "Options:\n\
+Options:\n\
 -f, --fastq-file, Input fastq file (required)\n\
 -t, --qual-type, Type of quality values (solexa (CASAVA < 1.3), illumina (CASAVA 1.3 to 1.7), sanger (which is CASAVA >= 1.8)) (required)\n\
--o, --output-file, Output trimmed fastq file (required)\n");
+-o, --output-file, Output trimmed fastq file (required)\n", PROGRAM_NAME);
 
     fprintf(stderr, "-q, --qual-threshold, Threshold for trimming based on average quality in a window. Default 20.\n\
 -l, --length-threshold, Threshold to keep a read based on length after trimming. Default 20.\n\

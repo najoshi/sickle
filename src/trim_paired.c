@@ -18,20 +18,20 @@ int paired_length_threshold = 20;
 
 static struct option paired_long_options[] = {
     {"qual-type", required_argument, 0, 't'},
-    {"pe-file1", optional_argument, 0, 'f'},
-    {"pe-file2", optional_argument, 0, 'r'},
-    {"pe-combo", optional_argument, 0, 'c'},
-    {"output-pe1", optional_argument, 0, 'o'},
-    {"output-pe2", optional_argument, 0, 'p'},
-    {"output-single", optional_argument, 0, 's'},
-    {"output-combo", optional_argument, 0, 'm'},
-    {"qual-threshold", optional_argument, 0, 'q'},
-    {"length-threshold", optional_argument, 0, 'l'},
-    {"no-fiveprime", optional_argument, 0, 'x'},
-    {"truncate-n", optional_argument, 0, 'n'},
-    {"gzip-output", optional_argument, 0, 'g'},
-    {"output-combo-all", optional_argument, 0, 'M'},
-    {"quiet", optional_argument, 0, 'z'},
+    {"pe-file1", required_argument, 0, 'f'},
+    {"pe-file2", required_argument, 0, 'r'},
+    {"pe-combo", required_argument, 0, 'c'},
+    {"output-pe1", required_argument, 0, 'o'},
+    {"output-pe2", required_argument, 0, 'p'},
+    {"output-single", required_argument, 0, 's'},
+    {"output-combo", required_argument, 0, 'm'},
+    {"qual-threshold", required_argument, 0, 'q'},
+    {"length-threshold", required_argument, 0, 'l'},
+    {"no-fiveprime", no_argument, 0, 'x'},
+    {"truncate-n", no_argument, 0, 'n'},
+    {"gzip-output", no_argument, 0, 'g'},
+    {"output-combo-all", required_argument, 0, 'M'},
+    {"quiet", no_argument, 0, 'z'},
     {GETOPT_HELP_OPTION_DECL},
     {GETOPT_VERSION_OPTION_DECL},
     {NULL, 0, NULL, 0}
@@ -45,8 +45,6 @@ void paired_usage (int status, char *msg) {
     fprintf(stderr, "Usage: %s pe [options] -c <interleaved input file> -t <quality type> -m <interleaved trimmed paired-end output> -s <trimmed singles file>\n\n\
 If you have one file with interleaved reads as input and you want ONLY one interleaved file as output:\n\
 Usage: %s pe [options] -c <interleaved input file> -t <quality type> -M <interleaved trimmed output>\n\n", PROGRAM_NAME, PROGRAM_NAME);
-    fprintf(stderr, "Finally, if you are using the long-style options, make sure to use an equals sign (=) with the option:\n\
-Usage: %s pe [options] --pe-file1=<paired-end forward fastq file> --pe-file2=<paired-end reverse fastq file> --qual-type=<quality type> --output-pe1=<trimmed PE forward file> --output-pe2=<trimmed PE reverse file> --output-single=<trimmed singles file>\n\n", PROGRAM_NAME);
     fprintf(stderr, "Options:\n\
 Paired-end separated reads\n\
 --------------------------\n\

@@ -94,7 +94,7 @@ truncation of sequences with Ns.
     sickle se -f input_file.fastq -t illumina -o trimmed_output_file.fastq -q 33 -l 40
     sickle se -f input_file.fastq -t illumina -o trimmed_output_file.fastq -x -n
     sickle se -t sanger -g -f input_file.fastq -o trimmed_output_file.fastq.gz
-    sickle se --fastq-file=input_file.fastq --qual-type=sanger --output-file=trimmed_output_file.fastq
+    sickle se --fastq-file input_file.fastq --qual-type sanger --output-file trimmed_output_file.fastq
 
 ### Sickle Paired End (`sickle pe`)
 
@@ -136,6 +136,6 @@ enable truncation of sequences with Ns.
 
     sickle pe -c combo.fastq -t sanger -M combo_trimmed_all.fastq
 
-    sickle pe --pe-file1=input_file1.fastq --pe-file2=input_file2.fastq --qual-type=sanger \
-    --output-pe1=trimmed_output_file1.fastq --output-pe2=trimmed_output_file2.fastq \
-    --output-single=trimmed_singles_file.fastq
+    sickle pe --pe-file1 input_file1.fastq --pe-file2 input_file2.fastq --qual-type sanger \
+    --output-pe1 trimmed_output_file1.fastq --output-pe2 trimmed_output_file2.fastq \
+    --output-single trimmed_singles_file.fastq
