@@ -45,6 +45,8 @@ void paired_usage (int status, char *msg) {
     fprintf(stderr, "Usage: %s pe [options] -c <interleaved input file> -t <quality type> -m <interleaved trimmed paired-end output> -s <trimmed singles file>\n\n\
 If you have one file with interleaved reads as input and you want ONLY one interleaved file as output:\n\
 Usage: %s pe [options] -c <interleaved input file> -t <quality type> -M <interleaved trimmed output>\n\n", PROGRAM_NAME, PROGRAM_NAME);
+    fprintf(stderr, "Finally, if you are using the long-style options, make sure to use an equals sign (=) with the option:\n\
+Usage: %s pe [options] --pe-file1=<paired-end forward fastq file> --pe-file2=<paired-end reverse fastq file> --qual-type=<quality type> --output-pe1=<trimmed PE forward file> --output-pe2=<trimmed PE reverse file> --output-single=<trimmed singles file>\n\n", PROGRAM_NAME);
     fprintf(stderr, "Options:\n\
 Paired-end separated reads\n\
 --------------------------\n\
@@ -480,7 +482,7 @@ int paired_main(int argc, char *argv[]) {
     }
 
     if (!quiet) {
-        if (infn1 && infn2) fprintf(stdout, "\nPE forwrd file: %s\nPE reverse file: %s\n", infn1, infn2);
+        if (infn1 && infn2) fprintf(stdout, "\nPE forward file: %s\nPE reverse file: %s\n", infn1, infn2);
         if (infnc) fprintf(stdout, "\nPE interleaved file: %s\n", infnc);
         fprintf(stdout, "\nTotal input FastQ records: %d (%d pairs)\n", total, (total / 2));
         fprintf(stdout, "\nFastQ paired records kept: %d (%d pairs)\n", kept_p, (kept_p / 2));

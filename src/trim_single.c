@@ -34,10 +34,13 @@ void single_usage(int status, char *msg) {
 
     fprintf(stderr, "\nUsage: %s se [options] -f <fastq sequence file> -t <quality type> -o <trimmed fastq file>\n\
 \n\
-Options:\n\
+If you are using the long-style options, make sure to use an equals sign (=) with the option:\n\
+Usage: sickle se [options] --fastq-file=<fastq sequence file> --qual-type=<quality type> --output-file=<trimmed fastq file>\n\n", PROGRAM_NAME);
+
+fprintf(stderr, "Options:\n\
 -f, --fastq-file, Input fastq file (required)\n\
 -t, --qual-type, Type of quality values (solexa (CASAVA < 1.3), illumina (CASAVA 1.3 to 1.7), sanger (which is CASAVA >= 1.8)) (required)\n\
--o, --output-file, Output trimmed fastq file (required)\n", PROGRAM_NAME);
+-o, --output-file, Output trimmed fastq file (required)\n");
 
     fprintf(stderr, "-q, --qual-threshold, Threshold for trimming based on average quality in a window. Default 20.\n\
 -l, --length-threshold, Threshold to keep a read based on length after trimming. Default 20.\n\
