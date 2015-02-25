@@ -17,17 +17,17 @@ int single_length_threshold = 20;
 
 static const char *single_short_options = "df:t:o:q:l:zxng";
 static struct option single_long_options[] = {
-    {"fastq-file", required_argument, 0, 'f'},
-    {"output-file", required_argument, 0, 'o'},
-    {"qual-type", required_argument, 0, 't'},
-    {"qual-threshold", required_argument, 0, 'q'},
-    {"length-threshold", required_argument, 0, 'l'},
-    {"no-fiveprime", no_argument, 0, 'x'},
-    {"trunc-n", no_argument, 0, 'n'},
-    {"truncate-n", no_argument, 0, 'n'},
-    {"gzip-output", no_argument, 0, 'g'},
-    {"quiet", no_argument, 0, 'z'},
-    {"debug", no_argument, 0, 'd'},
+    { "fastq-file",         required_argument, 0, 'f' },
+    { "output-file",        required_argument, 0, 'o' },
+    { "qual-type",          required_argument, 0, 't' },
+    { "qual-threshold",     required_argument, 0, 'q' },
+    { "length-threshold",   required_argument, 0, 'l' },
+    { "no-fiveprime",       no_argument,       0, 'x' },
+    { "trunc-n",            no_argument,       0, 'n' },
+    { "truncate-n",         no_argument,       0, 'n' },
+    { "gzip-output",        no_argument,       0, 'g' },
+    { "quiet",              no_argument,       0, 'z' },
+    { "debug",              no_argument,       0, 'd' },
     {GETOPT_HELP_OPTION_DECL},
     {GETOPT_VERSION_OPTION_DECL},
     {NULL, 0, NULL, 0}
