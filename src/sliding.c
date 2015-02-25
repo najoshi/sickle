@@ -32,9 +32,10 @@ int get_quality_num (char qualchar, int qualtype, kseq_t *fqrec, int pos) {
 }
 
 
-cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int qual_threshold, int no_fiveprime, int trunc_n, int debug) {
+cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int qual_threshold, int window_size, int no_fiveprime, int trunc_n, int debug) {
 
-	int window_size = (int) (0.1 * fqrec->seq.l);
+	if (!window_size)
+		window_size = (int) (0.1 * fqrec->seq.l);
 	int i,j;
 	int window_start=0;
 	int window_total=0;
@@ -53,9 +54,9 @@ cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int
 		return (retvals);
 	}
 
-	/* if the seq length is less then 10bp, */
+	/* if the seq length is less then 10bp or the fixed window size is larger than the sequence length, */
 	/* then make the window size the length of the seq */
-	if (window_size == 0) window_size = fqrec->seq.l;
+	if (window_size == 0 || window_size > fqrec->seq.l) window_size = fqrec->seq.l;
 
 	for (i=0; i<window_size; i++) {
 		window_total += get_quality_num (fqrec->qual.s[i], qualtype, fqrec, i);
@@ -65,7 +66,7 @@ cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int
 
 		window_avg = (double)window_total / (double)window_size;
 
-        if (debug) printf ("no_fiveprime: %d, found 5prime: %d, window_avg: %f\n", no_fiveprime, found_five_prime, window_avg);
+        if (debug) printf ("no_fiveprime: %d, found 5prime: %d, window_avg: %f, window_size: %d\n", no_fiveprime, found_five_prime, window_avg, window_size);
 
 		/* Finding the 5' cutoff */
 		/* Find when the average quality in the window goes above the threshold starting from the 5' end */
