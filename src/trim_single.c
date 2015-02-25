@@ -22,7 +22,8 @@ static struct option single_long_options[] = {
     {"qual-threshold", required_argument, 0, 'q'},
     {"length-threshold", required_argument, 0, 'l'},
     {"no-fiveprime", no_argument, 0, 'x'},
-    {"discard-n", no_argument, 0, 'n'},
+    {"trunc-n", no_argument, 0, 'n'},
+    {"truncate-n", no_argument, 0, 'n'},
     {"gzip-output", no_argument, 0, 'g'},
     {"quiet", no_argument, 0, 'z'},
     {"debug", no_argument, 0, 'd'},
@@ -43,7 +44,7 @@ Options:\n\
     fprintf(stderr, "-q, --qual-threshold, Threshold for trimming based on average quality in a window. Default 20.\n\
 -l, --length-threshold, Threshold to keep a read based on length after trimming. Default 20.\n\
 -x, --no-fiveprime, Don't do five prime trimming.\n\
--n, --trunc-n, Truncate sequences at position of first N.\n\
+-n, --truncate-n, Truncate sequences at position of first N.\n\
 -g, --gzip-output, Output gzipped files.\n\
 --quiet, Don't print out any trimming information\n\
 --help, display this help and exit\n\
