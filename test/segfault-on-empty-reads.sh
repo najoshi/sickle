@@ -7,7 +7,7 @@ FILE_S=$(mktemp)
 trap "rm -f $FILE_O $FILE_P $FILE_S" EXIT
 
 ../src/sickle pe \
-  -t illumina \
+  -t sanger \
   -f "$(dirname "$0")"/segfault-on-empty-reads-1.fastq \
   -r "$(dirname "$0")"/segfault-on-empty-reads-2.fastq \
   -o $FILE_O \
