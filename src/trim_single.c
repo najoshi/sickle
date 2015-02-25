@@ -5,16 +5,16 @@
 #include <stdio.h>
 #include <getopt.h>
 #include "sickle.h"
-#include "kseq.h"
+#include <htslib/kseq.h>
 #include "print_record.h"
 
 #if HAVE_CONFIG_H
 # include <config.h>
 #endif
 
-__KS_GETC(gzread, BUFFER_SIZE)
-__KS_GETUNTIL(gzread, BUFFER_SIZE)
-__KSEQ_READ
+__KS_GETUNTIL(static, gzread)
+__KS_INLINED(gzread)
+__KSEQ_READ(static)
 
 int single_qual_threshold = 20;
 int single_length_threshold = 20;
