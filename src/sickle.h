@@ -3,7 +3,8 @@
 
 #include <limits.h>
 #include <zlib.h>
-#include "kseq.h"
+#include <htslib/kseq.h>
+#include <stdint.h>
 
 
 /* KSEQ_INIT() cannot be called here, because we only need the types
@@ -11,17 +12,17 @@
    to an unused function warning with GCC. So, the basic typedefs
    kseq.h has are included here, and each file that reads needs:
 
-   __KS_GETC(gzread, BUFFER_SIZE)
-   __KS_GETUNTIL(gzread, BUFFER_SIZE)
-   __KSEQ_READ
+   __KS_GETUNTIL(static, gzread)
+   __KS_INLINED(gzread)
+   __KSEQ_READ(static)
 
 */
 
 #define BUFFER_SIZE 4096
 __KS_TYPE(gzFile)
-__KS_BASIC(gzFile, BUFFER_SIZE)
+__KS_BASIC(static, gzFile, BUFFER_SIZE)
 __KSEQ_TYPE(gzFile)
-__KSEQ_BASIC(gzFile)
+__KSEQ_BASIC(static, gzFile)
 
 #ifndef AUTHORS
 #define AUTHORS "Nikhil Joshi, UC Davis Bioinformatics Core\n"
