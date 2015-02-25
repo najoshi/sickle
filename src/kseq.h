@@ -191,7 +191,12 @@ typedef struct __kstring_t {
    }                                                                    \
    }                                                                    \
      if (c == '>' || c == '@') seq->last_char = c; /* the first header char has been read */ \
-     seq->seq.s[seq->seq.l] = 0;	/* null terminated string */    \
+     if (seq->seq.l + 1 >= seq->seq.m) { /* seq->seq.s[seq->seq.l] below may be out of boundary */ \
+     seq->seq.m = seq->seq.l + 2; \
+     kroundup32(seq->seq.m); /* rounded to the next closest 2^k */ \
+     seq->seq.s = (char*)realloc(seq->seq.s, seq->seq.m); \
+     } \
+     seq->seq.s[seq->seq.l] = 0;    /* null terminated string */    \
      if (c != '+') return seq->seq.l; /* FASTA */                       \
      if (seq->qual.m < seq->seq.m) {	/* allocate enough memory */	\
      seq->qual.m = seq->seq.m;                                          \
