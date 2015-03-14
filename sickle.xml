@@ -69,7 +69,6 @@
 		-n
 		#end if
 
-		--quiet
 	</command>
 
 	<inputs>
