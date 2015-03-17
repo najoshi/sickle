@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <getopt.h>
 #include "sickle.h"
-#include "kseq.h"
+#include <htslib/kseq.h>
 
 int get_quality_num (char qualchar, int qualtype, kseq_t *fqrec, int pos) {
   /* 

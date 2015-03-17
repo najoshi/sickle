@@ -5,12 +5,16 @@
 #include <stdio.h>
 #include <getopt.h>
 #include "sickle.h"
-#include "kseq.h"
+#include <htslib/kseq.h>
 #include "print_record.h"
 
-__KS_GETC(gzread, BUFFER_SIZE)
-__KS_GETUNTIL(gzread, BUFFER_SIZE)
-__KSEQ_READ
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
+
+__KS_GETUNTIL(static, gzread)
+__KS_INLINED(gzread)
+__KSEQ_READ(static)
 
 int single_qual_threshold = 20;
 int single_length_threshold = 20;
@@ -37,7 +41,7 @@ void single_usage(int status, char *msg) {
 Options:\n\
 -f, --fastq-file, Input fastq file (required)\n\
 -t, --qual-type, Type of quality values (solexa (CASAVA < 1.3), illumina (CASAVA 1.3 to 1.7), sanger (which is CASAVA >= 1.8)) (required)\n\
--o, --output-file, Output trimmed fastq file (required)\n", PROGRAM_NAME);
+-o, --output-file, Output trimmed fastq file (required)\n", PACKAGE_NAME);
 
     fprintf(stderr, "-q, --qual-threshold, Threshold for trimming based on average quality in a window. Default 20.\n\
 -l, --length-threshold, Threshold to keep a read based on length after trimming. Default 20.\n\
@@ -145,7 +149,7 @@ int single_main(int argc, char *argv[]) {
             break;
 
         case_GETOPT_HELP_CHAR(single_usage)
-        case_GETOPT_VERSION_CHAR(PROGRAM_NAME, VERSION, AUTHORS);
+        case_GETOPT_VERSION_CHAR(PACKAGE_NAME, PACKAGE_VERSION, AUTHORS);
 
         case '?':
             single_usage(EXIT_FAILURE, NULL);
@@ -223,6 +227,9 @@ int single_main(int argc, char *argv[]) {
     gzclose(se);
     if (!gzip_output) fclose(outfile);
     else gzclose(outfile_gzip);
+
+    free(infn);
+    free(outfn);
 
     return EXIT_SUCCESS;
 }

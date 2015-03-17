@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include <zlib.h>
-#include "kseq.h"
+#include <htslib/kseq.h>
 
 void print_record (FILE *fp, kseq_t *fqr, cutsites *cs);
 void print_record_gzip (gzFile fp, kseq_t *fqr, cutsites *cs);

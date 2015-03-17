@@ -1,11 +1,12 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <zlib.h>
 #include <stdio.h>
 #include <unistd.h>
 #include "sickle.h"
-#include "kseq.h"
+#include <htslib/kseq.h>
 
 
 void print_record (FILE *fp, kseq_t *fqr, cutsites *cs) {
