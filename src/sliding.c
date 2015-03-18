@@ -32,6 +32,59 @@ int get_quality_num (char qualchar, int qualtype, kseq_t *fqrec, int pos) {
 }
 
 
+int trim_poly_a(char *seq, int min_cutoff, int trim_errors, size_t start, size_t end) {
+       	 
+	int cut_off = 0, errors = 0, tmp_add = 0, index = 0;
+
+        for (index = start; index >= end; index--) {
+                if (seq[index] == 'A') {
+                        cut_off++;
+                        cut_off += tmp_add;
+                        tmp_add = 0;
+                } else {
+                        errors++;
+                        tmp_add++;
+                }
+
+                if (errors >= trim_errors) {
+                        break;
+                }
+        }
+
+        if (min_cutoff > cut_off) {
+                return 0;
+        } else {
+                return cut_off;
+        }
+}
+
+
+int trim_poly_t(char *seq, int min_cutoff, int trim_errors, size_t start, size_t end) {
+        
+	int cut_off = 0, errors = 0, tmp_add = 0, index;
+
+        for (index = start; index < end; index++) {
+                if (seq[index] == 'T') {
+                        cut_off++;
+                        cut_off += tmp_add;
+                        tmp_add = 0;
+                } else {
+                        errors++;
+                        tmp_add++;
+                }
+
+                if (errors >= trim_errors) {
+                        break;
+                }
+        }
+
+        if (min_cutoff > cut_off) {
+                return 0;
+        } else {
+                return cut_off;
+        }
+}
+
 cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int qual_threshold, int no_fiveprime, int trunc_n, int debug) {
 
 	int window_size = (int) (0.1 * fqrec->seq.l);
@@ -60,7 +113,7 @@ cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int
 	for (i=0; i<window_size; i++) {
 		window_total += get_quality_num (fqrec->qual.s[i], qualtype, fqrec, i);
 	}
-
+	
 	for (i=0; i <= fqrec->qual.l - window_size; i++) {
 
 		window_avg = (double)window_total / (double)window_size;
