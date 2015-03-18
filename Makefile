@@ -1,7 +1,7 @@
 PROGRAM_NAME = sickle
 VERSION = 1.33
 CC = gcc
-CFLAGS = -Wall -pedantic -DVERSION=$(VERSION)
+CFLAGS = -Wall -pedantic -std=c99 -DVERSION=$(VERSION)
 DEBUG = -g
 OPT = -O3
 ARCHIVE = $(PROGRAM_NAME)_$(VERSION)
@@ -9,7 +9,7 @@ LDFLAGS=
 LIBS = -lz
 SDIR = src
 
-.PHONY: clean default build distclean dist debug
+.PHONY: clean default build distclean dist debug test
 
 default: build
 
@@ -43,3 +43,14 @@ build: sliding.o trim_single.o trim_paired.o sickle.o print_record.o
 debug:
 	$(MAKE) build "CFLAGS=-Wall -pedantic -g -DDEBUG"
 
+test: build
+	@prove -Itest/lib -w test/*.t
+
+install-test-deps:
+	@if ! which cpanm >/dev/null 2>&1; then \
+		echo "You don't appear to have cpanm installed.  Try:"; \
+		echo "   curl -fsSL https://cpanmin.us | perl - App::cpanminus --sudo"; \
+		echo; \
+		exit 1; \
+	fi
+	(cd test; cpanm --installdeps .)

@@ -15,40 +15,71 @@ __KSEQ_READ
 int single_qual_threshold = 20;
 int single_length_threshold = 20;
 
+static const char *single_short_options = "df:t:o:q:l:w:zxnNg";
 static struct option single_long_options[] = {
-    {"fastq-file", required_argument, 0, 'f'},
-    {"output-file", required_argument, 0, 'o'},
-    {"qual-type", required_argument, 0, 't'},
-    {"qual-threshold", required_argument, 0, 'q'},
-    {"length-threshold", required_argument, 0, 'l'},
-    {"no-fiveprime", no_argument, 0, 'x'},
-    {"discard-n", no_argument, 0, 'n'},
-    {"gzip-output", no_argument, 0, 'g'},
-    {"quiet", no_argument, 0, 'z'},
+    { "fastq-file",         required_argument, 0, 'f' },
+    { "output-file",        required_argument, 0, 'o' },
+    { "qual-type",          required_argument, 0, 't' },
+    { "qual-threshold",     required_argument, 0, 'q' },
+    { "length-threshold",   required_argument, 0, 'l' },
+    { "no-fiveprime",       no_argument,       0, 'x' },
+    { "window",             required_argument, 0, 'w' },
+    { "trunc-n",            no_argument,       0, 'n' },
+    { "truncate-n",         no_argument,       0, 'n' },
+    { "drop-n",             no_argument,       0, 'N' },
+    { "gzip-output",        no_argument,       0, 'g' },
+    { "quiet",              no_argument,       0, 'z' },
+    { "debug",              no_argument,       0, 'd' },
     {GETOPT_HELP_OPTION_DECL},
     {GETOPT_VERSION_OPTION_DECL},
     {NULL, 0, NULL, 0}
 };
 
 void single_usage(int status, char *msg) {
+    static const char *usage_format =
+        "\n"
+        "Usage: %1$s se [options] -f <fastq sequence file>\n"
+        "       %2$*3$s           -t <quality type>\n"
+        "       %2$*3$s           -o <trimmed fastq file>\n"
+        "\n"
+        "Options:\n"
+        "\n"
+        "-f FILE, --fastq-file FILE   Input fastq file (required)\n"
+        "-o FILE, --output-file FILE  Output trimmed fastq file (required)\n"
+        "-t TYPE, --qual-type TYPE    Type of quality values, one of:\n"
+        "                                 solexa (CASAVA < 1.3)\n"
+        "                                 illumina (CASAVA 1.3 to 1.7)\n"
+        "                                 sanger (which is CASAVA >= 1.8)\n"
+        "                             (required)\n"
+        "-q #, --qual-threshold #     Threshold for trimming based on average quality\n"
+        "                             in a window. Default %3$d.\n"
+        "-l #, --length-threshold #   Threshold to keep a read based on length after\n"
+        "                             trimming. Default %4$d.\n"
+        "-w #, --window #             Fixed window size to use.  Default is a dynamic\n"
+        "                             window size of 0.1 of the read length.\n"
+        "-x, --no-fiveprime           Don't do five prime trimming.\n"
+        "-n, --truncate-n             Truncate sequences at position of first N between\n"
+        "                             the 5' and 3' trim sites (i.e. moves the 3' trim site\n"
+        "                             to the N closest to the 5' end).\n"
+        "-N, --drop-n                 Discard sequences containing an N between the 5'\n"
+        "                             and 3' trim sites.\n"
+        "-g, --gzip-output            Output gzipped files.\n"
+        "--quiet                      Do not output trimming info\n"
+        "--help                       Display this help and exit\n"
+        "--version                    Output version information and exit\n"
+    ;
 
-    fprintf(stderr, "\nUsage: %s se [options] -f <fastq sequence file> -t <quality type> -o <trimmed fastq file>\n\
-\n\
-Options:\n\
--f, --fastq-file, Input fastq file (required)\n\
--t, --qual-type, Type of quality values (solexa (CASAVA < 1.3), illumina (CASAVA 1.3 to 1.7), sanger (which is CASAVA >= 1.8)) (required)\n\
--o, --output-file, Output trimmed fastq file (required)\n", PROGRAM_NAME);
+    if (msg) fprintf( STDERR_OR_OUT(status), "%s\n", msg );
 
-    fprintf(stderr, "-q, --qual-threshold, Threshold for trimming based on average quality in a window. Default 20.\n\
--l, --length-threshold, Threshold to keep a read based on length after trimming. Default 20.\n\
--x, --no-fiveprime, Don't do five prime trimming.\n\
--n, --trunc-n, Truncate sequences at position of first N.\n\
--g, --gzip-output, Output gzipped files.\n\
---quiet, Don't print out any trimming information\n\
---help, display this help and exit\n\
---version, output version information and exit\n\n");
+    fprintf(
+        STDERR_OR_OUT(status),
+        usage_format,
+        PROGRAM_NAME,
+        "", strlen(PROGRAM_NAME) + 3, // +3 makes it possible to keep text visually aligned in the format string itself
+        single_qual_threshold,
+        single_length_threshold
+    );
 
-    if (msg) fprintf(stderr, "%s\n\n", msg);
     exit(status);
 }
 
@@ -71,12 +102,14 @@ int single_main(int argc, char *argv[]) {
     int quiet = 0;
     int no_fiveprime = 0;
     int trunc_n = 0;
+    int drop_n = 0;
     int gzip_output = 0;
     int total=0;
+    int window_size = 0;
 
     while (1) {
         int option_index = 0;
-        optc = getopt_long(argc, argv, "df:t:o:q:l:zxng", single_long_options, &option_index);
+        optc = getopt_long(argc, argv, single_short_options, single_long_options, &option_index);
 
         if (optc == -1)
             break;
@@ -124,12 +157,24 @@ int single_main(int argc, char *argv[]) {
             }
             break;
 
+        case 'w':
+            window_size = atoi(optarg);
+            if (window_size < 1) {
+                fprintf(stderr, "Fixed window size must be >= 1\n");
+                return EXIT_FAILURE;
+            }
+            break;
+
         case 'x':
             no_fiveprime = 1;
             break;
 
         case 'n':
             trunc_n = 1;
+            break;
+
+        case 'N':
+            drop_n = 1;
             break;
 
         case 'g':
@@ -187,12 +232,17 @@ int single_main(int argc, char *argv[]) {
         }
     }
 
+    if (trunc_n && drop_n) {
+        fprintf(stderr, "****Error: cannot specify both --truncate-n and --drop-n\n\n");
+        return EXIT_FAILURE;
+    }
+
 
     fqrec = kseq_init(se);
 
     while ((l = kseq_read(fqrec)) >= 0) {
 
-        p1cut = sliding_window(fqrec, qualtype, single_length_threshold, single_qual_threshold, no_fiveprime, trunc_n, debug);
+        p1cut = sliding_window(fqrec, qualtype, single_length_threshold, single_qual_threshold, window_size, no_fiveprime, trunc_n, drop_n, debug);
         total++;
 
         if (debug) printf("P1cut: %d,%d\n", p1cut->five_prime_cut, p1cut->three_prime_cut);

@@ -16,62 +16,110 @@ __KSEQ_READ
 int paired_qual_threshold = 20;
 int paired_length_threshold = 20;
 
+static const char *paired_short_options = "df:r:c:t:o:p:m:M:s:q:l:w:xnNg";
 static struct option paired_long_options[] = {
-    {"qual-type", required_argument, 0, 't'},
-    {"pe-file1", required_argument, 0, 'f'},
-    {"pe-file2", required_argument, 0, 'r'},
-    {"pe-combo", required_argument, 0, 'c'},
-    {"output-pe1", required_argument, 0, 'o'},
-    {"output-pe2", required_argument, 0, 'p'},
-    {"output-single", required_argument, 0, 's'},
-    {"output-combo", required_argument, 0, 'm'},
-    {"qual-threshold", required_argument, 0, 'q'},
-    {"length-threshold", required_argument, 0, 'l'},
-    {"no-fiveprime", no_argument, 0, 'x'},
-    {"truncate-n", no_argument, 0, 'n'},
-    {"gzip-output", no_argument, 0, 'g'},
-    {"output-combo-all", required_argument, 0, 'M'},
-    {"quiet", no_argument, 0, 'z'},
+    { "qual-type",           required_argument, 0, 't' },
+    { "pe-file1",            required_argument, 0, 'f' },
+    { "pe-file2",            required_argument, 0, 'r' },
+    { "pe-combo",            required_argument, 0, 'c' },
+    { "output-pe1",          required_argument, 0, 'o' },
+    { "output-pe2",          required_argument, 0, 'p' },
+    { "output-single",       required_argument, 0, 's' },
+    { "output-combo",        required_argument, 0, 'm' },
+    { "qual-threshold",      required_argument, 0, 'q' },
+    { "length-threshold",    required_argument, 0, 'l' },
+    { "window",              required_argument, 0, 'w' },
+    { "no-fiveprime",        no_argument,       0, 'x' },
+    { "truncate-n",          no_argument,       0, 'n' },
+    { "drop-n",              no_argument,       0, 'N' },
+    { "gzip-output",         no_argument,       0, 'g' },
+    { "output-combo-all",    required_argument, 0, 'M' },
+    { "quiet",               no_argument,       0, 'z' },
+    { "debug",               no_argument,       0, 'd' },
     {GETOPT_HELP_OPTION_DECL},
     {GETOPT_VERSION_OPTION_DECL},
     {NULL, 0, NULL, 0}
 };
 
 void paired_usage (int status, char *msg) {
+    static const char *usage_format =
+        "\n"
+        "If you have separate files for forward and reverse reads:\n"
+        "  Usage: %1$s pe [options] -f <paired-end forward fastq file>\n"
+        "         %2$*3$s           -r <paired-end reverse fastq file>\n"
+        "         %2$*3$s           -t <quality type>\n"
+        "         %2$*3$s           -o <trimmed PE forward file>\n"
+        "         %2$*3$s           -p <trimmed PE reverse file>\n"
+        "         %2$*3$s           -s <trimmed singles file>\n"
+        "\n"
+        "If you have one file with interleaved forward and reverse reads:\n"
+        "  Usage: %1$s pe [options] -c <interleaved input file>\n"
+        "         %2$*3$s           -t <quality type>\n"
+        "         %2$*3$s           -m <interleaved trimmed paired-end output>\n"
+        "         %2$*3$s           -s <trimmed singles file>\n"
+        "\n"
+        "If you have one file with interleaved reads as input and you want\n"
+        "ONLY one interleaved file as output:\n"
+        "  Usage: %1$s pe [options] -c <interleaved input file>\n"
+        "         %2$*3$s           -t <quality type>\n"
+        "         %2$*3$s           -M <interleaved trimmed output>\n"
+        "\n"
+        "Options:\n"
+        "\n"
+        "Paired-end separated reads\n"
+        "--------------------------\n"
+        "-f, --pe-file1     Input paired-end forward fastq file\n"
+        "-r, --pe-file2     Input paired-end reverse fastq file\n"
+        "                   (input files must have same number of records)\n"
+        "-o, --output-pe1   Output trimmed forward fastq file\n"
+        "-p, --output-pe2   Output trimmed reverse fastq file. Must use -s option.\n"
+        "\n"
+        "Paired-end interleaved reads\n"
+        "----------------------------\n"
+        "-c, --pe-combo          Combined (interleaved) input paired-end fastq\n"
+        "-m, --output-combo      Output combined (interleaved) paired-end fastq file.\n"
+        "                        Must use -s option.\n"
+        "-M, --output-combo-all  Output combined (interleaved) paired-end fastq file\n"
+        "                        with any discarded read written to output file as a\n"
+        "                        single N. Cannot be used with the -s option.\n"
+        "\n"
+        "Global options\n"
+        "--------------\n"
+        "-t TYPE, --qual-type TYPE      Type of quality values, one of:\n"
+        "                                   solexa (CASAVA < 1.3)\n"
+        "                                   illumina (CASAVA 1.3 to 1.7)\n"
+        "                                   sanger (which is CASAVA >= 1.8)\n"
+        "                               (required)\n"
+        "-s FILE, --output-single FILE  Output trimmed singles fastq file\n"
+        "-q #, --qual-threshold #       Threshold for trimming based on average quality\n"
+        "                               in a window. Default %3$d.\n"
+        "-l #, --length-threshold #     Threshold to keep a read based on length after\n"
+        "                               trimming. Default %4$d.\n"
+        "-w #, --window #               Fixed window size to use.  Default is a dynamic\n"
+        "                               window size of 0.1 of the read length.\n"
+        "-x, --no-fiveprime             Don't do five prime trimming.\n"
+        "-n, --truncate-n               Truncate sequences at position of first N between\n"
+        "                               the 5' and 3' trim sites (i.e. moves the 3' trim site\n"
+        "                               to the N closest to the 5' end).\n"
+        "-N, --drop-n                   Discard sequences containing an N between the 5'\n"
+        "                               and 3' trim sites.\n"
+        "-g, --gzip-output              Output gzipped files.\n"
+        "--quiet                        Do not output trimming info\n"
+        "--help                         Display this help and exit\n"
+        "--version                      Output version information and exit\n"
+    ;
 
-    fprintf(stderr, "\nIf you have separate files for forward and reverse reads:\n");
-    fprintf(stderr, "Usage: %s pe [options] -f <paired-end forward fastq file> -r <paired-end reverse fastq file> -t <quality type> -o <trimmed PE forward file> -p <trimmed PE reverse file> -s <trimmed singles file>\n\n", PROGRAM_NAME);
-    fprintf(stderr, "If you have one file with interleaved forward and reverse reads:\n");
-    fprintf(stderr, "Usage: %s pe [options] -c <interleaved input file> -t <quality type> -m <interleaved trimmed paired-end output> -s <trimmed singles file>\n\n\
-If you have one file with interleaved reads as input and you want ONLY one interleaved file as output:\n\
-Usage: %s pe [options] -c <interleaved input file> -t <quality type> -M <interleaved trimmed output>\n\n", PROGRAM_NAME, PROGRAM_NAME);
-    fprintf(stderr, "Options:\n\
-Paired-end separated reads\n\
---------------------------\n\
--f, --pe-file1, Input paired-end forward fastq file (Input files must have same number of records)\n\
--r, --pe-file2, Input paired-end reverse fastq file\n\
--o, --output-pe1, Output trimmed forward fastq file\n\
--p, --output-pe2, Output trimmed reverse fastq file. Must use -s option.\n\n\
-Paired-end interleaved reads\n\
-----------------------------\n");
-    fprintf(stderr,"-c, --pe-combo, Combined (interleaved) input paired-end fastq\n\
--m, --output-combo, Output combined (interleaved) paired-end fastq file. Must use -s option.\n\
--M, --output-combo-all, Output combined (interleaved) paired-end fastq file with any discarded read written to output file as a single N. Cannot be used with the -s option.\n\n\
-Global options\n\
---------------\n\
--t, --qual-type, Type of quality values (solexa (CASAVA < 1.3), illumina (CASAVA 1.3 to 1.7), sanger (which is CASAVA >= 1.8)) (required)\n");
-    fprintf(stderr, "-s, --output-single, Output trimmed singles fastq file\n\
--q, --qual-threshold, Threshold for trimming based on average quality in a window. Default 20.\n\
--l, --length-threshold, Threshold to keep a read based on length after trimming. Default 20.\n\
--x, --no-fiveprime, Don't do five prime trimming.\n\
--n, --truncate-n, Truncate sequences at position of first N.\n");
+    if (msg) fprintf( STDERR_OR_OUT(status), "%s\n", msg );
 
+    fprintf(
+        STDERR_OR_OUT(status),
+        usage_format,
+        PROGRAM_NAME,
+        "", strlen(PROGRAM_NAME) + 3, // +3 makes it possible to keep text visually aligned in the format string itself
+        paired_qual_threshold,
+        paired_length_threshold
+    );
 
-    fprintf(stderr, "-g, --gzip-output, Output gzipped files.\n--quiet, do not output trimming info\n\
---help, display this help and exit\n\
---version, output version information and exit\n\n");
-
-    if (msg) fprintf(stderr, "%s\n\n", msg);
     exit(status);
 }
 
@@ -114,14 +162,16 @@ int paired_main(int argc, char *argv[]) {
     int quiet = 0;
     int no_fiveprime = 0;
     int trunc_n = 0;
+    int drop_n = 0;
     int gzip_output = 0;
     int combo_all=0;
     int combo_s=0;
     int total=0;
+    int window_size = 0;
 
     while (1) {
         int option_index = 0;
-        optc = getopt_long(argc, argv, "df:r:c:t:o:p:m:M:s:q:l:xng", paired_long_options, &option_index);
+        optc = getopt_long(argc, argv, paired_short_options, paired_long_options, &option_index);
 
         if (optc == -1)
             break;
@@ -198,12 +248,24 @@ int paired_main(int argc, char *argv[]) {
             }
             break;
 
+        case 'w':
+            window_size = atoi(optarg);
+            if (window_size < 1) {
+                fprintf(stderr, "Fixed window size must be >= 1\n");
+                return EXIT_FAILURE;
+            }
+            break;
+
         case 'x':
             no_fiveprime = 1;
             break;
 
         case 'n':
             trunc_n = 1;
+            break;
+
+        case 'N':
+            drop_n = 1;
             break;
 
         case 'g':
@@ -234,6 +296,11 @@ int paired_main(int argc, char *argv[]) {
     /* required: qualtype */
     if (qualtype == -1) {
         paired_usage(EXIT_FAILURE, "****Error: Quality type is required.");
+    }
+
+    if (trunc_n && drop_n) {
+        fprintf(stderr, "****Error: cannot specify both --truncate-n and --drop-n\n\n");
+        return EXIT_FAILURE;
     }
 
     /* make sure minimum input filenames are specified */
@@ -374,8 +441,8 @@ int paired_main(int argc, char *argv[]) {
             break;
         }
 
-        p1cut = sliding_window(fqrec1, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n, debug);
-        p2cut = sliding_window(fqrec2, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n, debug);
+        p1cut = sliding_window(fqrec1, qualtype, paired_length_threshold, paired_qual_threshold, window_size, no_fiveprime, trunc_n, drop_n, debug);
+        p2cut = sliding_window(fqrec2, qualtype, paired_length_threshold, paired_qual_threshold, window_size, no_fiveprime, trunc_n, drop_n, debug);
         total += 2;
 
         if (debug) printf("p1cut: %d,%d\n", p1cut->five_prime_cut, p1cut->three_prime_cut);
