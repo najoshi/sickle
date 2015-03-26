@@ -53,7 +53,8 @@ Sickle doesn't have a paper, but you can cite it like this:
 ## Requirements 
 
 Sickle requires a C compiler; GCC or clang are recommended. Sickle
-relies on Heng Li's kseq.h, which is bundled with the source.
+relies on Heng Li's kseq.h, which is provided by
+[htslib](https://github.com/samtools/htslib/).
 
 Sickle also requires Zlib, which can be obtained at
 <http://www.zlib.net/>.
@@ -62,9 +63,14 @@ Sickle also requires Zlib, which can be obtained at
 
 To build Sickle, enter:
 
+    ./configure
     make
+    make install
 
-Then, copy or move "sickle" to a directory in your $PATH.
+In case configure is not included in your distribution, e.g. when cloning the
+source from github, run the following first:
+
+    ./bootstrap
 
 ## Usage
 
