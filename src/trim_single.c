@@ -44,6 +44,7 @@ void single_usage(int status, char *msg) {
 "-l, --length-threshold, Threshold to keep a read based on length after trimming. Default 20.\n"
 "-x, --no-fiveprime, Don't do five prime trimming.\n"
 "-n, --trunc-n, Truncate sequences at position of first N.\n, --polyA-min, Minimum length of Poly-A or Poly-T tail to trim\n"
+"-a, --polyA-trimming, Turn on Poly-A or Poly-T tail trimmng\n"
 "-A, --polyA-min, Minimum length of Poly-A or Poly-T tail to trim. Default 10\n");
 
     fprintf(stderr, "-E, --polyA-error, Maximum amount of errors allowed in Poly-A or Poly-T tail in when trimming. Default 3\n"

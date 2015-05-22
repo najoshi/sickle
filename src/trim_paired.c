@@ -71,11 +71,13 @@ Global options\n\
 "-l, --length-threshold, Threshold to keep a read based on length after trimming. Default 20.\n"
 "-x, --no-fiveprime, Don't do five prime trimming.\n"
 "-n, --truncate-n, Truncate sequences at position of first N.\n"
-"-A, --polyA-min, Minimum length of Poly-A or Poly-T tail to trim. Default 10\n"
+"-a, --polyA-trimming, Turn on Poly A/T trimming\n"
 "-E, --polyA-error, Maximum amount of errors allowed in Poly-A or Poly-T tail in when trimming. Default 3\n");
 
 
-    fprintf(stderr, "-g, --gzip-output, Output gzipped files.\n--quiet, do not output trimming info\n\
+    fprintf(stderr, 
+"-A, --polyA-min, Minimum length of Poly-A or Poly-T tail to trim. Default 10\n"
+"-g, --gzip-output, Output gzipped files.\n--quiet, do not output trimming info\n\
 --help, display this help and exit\n\
 --version, output version information and exit\n\n");
 
