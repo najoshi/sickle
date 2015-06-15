@@ -26,6 +26,7 @@ static struct option paired_long_options[] = {
     {"pe-combo", optional_argument, 0, 'c'},
     {"output-pe1", optional_argument, 0, 'o'},
     {"output-pe2", optional_argument, 0, 'p'},
+    {"output-all", optional_argument, 0, 'a'},
     {"output-single", optional_argument, 0, 's'},
     {"output-combo", optional_argument, 0, 'm'},
     {"qual-threshold", optional_argument, 0, 'q'},
@@ -34,6 +35,7 @@ static struct option paired_long_options[] = {
     {"orphan-length-threshold", optional_argument, 0, 'L'},
     {"no-fiveprime", optional_argument, 0, 'x'},
     {"truncate-n", optional_argument, 0, 'n'},
+    {"truncate-size", optional_argument, 0, 'N'},
     {"gzip-output", optional_argument, 0, 'g'},
     {"output-combo-all", optional_argument, 0, 'M'},
     {"quiet", optional_argument, 0, 'z'},
@@ -56,7 +58,8 @@ Paired-end separated reads\n\
 -f, --pe-file1, Input paired-end forward fastq file (Input files must have same number of records)\n\
 -r, --pe-file2, Input paired-end reverse fastq file\n\
 -o, --output-pe1, Output trimmed forward fastq file\n\
--p, --output-pe2, Output trimmed reverse fastq file. Must use -s option.\n\n\
+-p, --output-pe2, Output trimmed reverse fastq file. Must use -s option.\n\
+-a, --output-all, Output all pairs with at least one surviving reads, with a discarded read written to output file as a single N.\n\n\
 Paired-end interleaved reads\n\
 ----------------------------\n");
     fprintf(stderr,"-c, --pe-combo, Combined (interleaved) input paired-end fastq\n\
@@ -71,7 +74,8 @@ Global options\n\
 -l, --length-threshold, Threshold to keep a read based on length after trimming. Default 20.\n\
 -L, --orphan-length-threshold, Length threshold to use for retaining a single mate if one (but not both) mate fails the paired-end length threshold. Defaults to the value specified for --length-threshold.\n\
 -x, --no-fiveprime, Don't do five prime trimming.\n\
--n, --truncate-n, Truncate sequences at position of first N.\n");
+-n, --truncate-n, Truncate sequences at position of first N.\n\
+-N, --truncate-size, Truncate sequences at a maximum length.\n");
 
 
     fprintf(stderr, "-g, --gzip-output, Output gzipped files.\n--quiet, do not output trimming info\n\
@@ -121,14 +125,16 @@ int paired_main(int argc, char *argv[]) {
     int quiet = 0;
     int no_fiveprime = 0;
     int trunc_n = 0;
+    int trunc_size = -1;
     int gzip_output = 0;
+    int split_all = 0;
     int combo_all=0;
     int combo_s=0;
     int total=0;
     
     while (1) {
         int option_index = 0;
-        optc = getopt_long(argc, argv, "df:r:c:t:o:p:m:M:s:q:l:Q:L:xng", paired_long_options, &option_index);
+        optc = getopt_long(argc, argv, "df:r:c:t:o:p:m:M:s:q:l:Q:L:xnga", paired_long_options, &option_index);
 
         if (optc == -1)
             break;
@@ -171,7 +177,11 @@ int paired_main(int argc, char *argv[]) {
             outfn2 = (char *) malloc(strlen(optarg) + 1);
             strcpy(outfn2, optarg);
             break;
-
+        
+        case 'a':
+            split_all = 1;
+            break;
+        
         case 'm':
             outfnc = (char *) malloc(strlen(optarg) + 1);
             strcpy(outfnc, optarg);
@@ -228,7 +238,9 @@ int paired_main(int argc, char *argv[]) {
         case 'n':
             trunc_n = 1;
             break;
-
+        case 'N':
+            trunc_size = atoi(optarg);
+            break;    
         case 'g':
             gzip_output = 1;
             break;
@@ -278,6 +290,10 @@ int paired_main(int argc, char *argv[]) {
         }
     }
     
+    if (split_all) {
+        sfn = "";
+    }
+    
     if (infnc) {      /* using combined input file */
 
         if (infn1 || infn2 || outfn1 || outfn2) {
@@ -321,7 +337,7 @@ int paired_main(int argc, char *argv[]) {
 
     } else {     /* using forward and reverse input files */
 
-        if (infn1 && (!infn2 || !outfn1 || !outfn2 || !sfn)) {
+        if (infn1 && (!infn2 || !outfn1 || !outfn2 || (!sfn && !split_all))) {
             paired_usage(EXIT_FAILURE, "****Error: Using the -f option means you must have the -r, -o, -p, and -s options.");
         }
 
@@ -378,7 +394,7 @@ int paired_main(int argc, char *argv[]) {
     }
 
     /* get singles output file handle */
-    if (sfn && !combo_all) {
+    if (sfn && !combo_all && !split_all) {
         if (!gzip_output) {
             single = fopen(sfn, "w");
             if (!single) {
@@ -411,8 +427,8 @@ int paired_main(int argc, char *argv[]) {
             break;
         }
 
-        p1cut = sliding_window(fqrec1, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n, debug);
-        p2cut = sliding_window(fqrec2, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n, debug);
+        p1cut = sliding_window(fqrec1, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n, trunc_size, debug);
+        p2cut = sliding_window(fqrec2, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n, trunc_size, debug);
         total += 2;
 
         if (debug) printf("p1cut: %d,%d\n", p1cut->five_prime_cut, p1cut->three_prime_cut);
@@ -451,7 +467,7 @@ int paired_main(int argc, char *argv[]) {
             int write_orphan = 1;
             
             if (recheck_orphans) {
-                p1cut = sliding_window(fqrec1, qualtype, orphan_length_threshold, orphan_qual_threshold, no_fiveprime, trunc_n, debug);
+                p1cut = sliding_window(fqrec1, qualtype, orphan_length_threshold, orphan_qual_threshold, no_fiveprime, trunc_n, trunc_size, debug);
                 if (p1cut->three_prime_cut < 0) {
                     if (debug) printf("p1 orhpan discarded");
                     write_orphan = 0;
@@ -464,14 +480,22 @@ int paired_main(int argc, char *argv[]) {
                     if (combo_all) {
                         print_record (combo, fqrec1, p1cut);
                         print_record_N (combo, fqrec2, qualtype);
-                    } else {
+                    } else if (split_all) {
+                        print_record(outfile1, fqrec1, p1cut);
+                        print_record_N(outfile2, fqrec2, qualtype);
+                    }
+                    else {
                         print_record (single, fqrec1, p1cut);
                     }
                 } else {
                     if (combo_all) {
                         print_record_gzip (combo_gzip, fqrec1, p1cut);
                         print_record_N_gzip (combo_gzip, fqrec2, qualtype);
-                    } else {
+                    } else if (split_all) {
+                        print_record_gzip(outfile1, fqrec1, p1cut);
+                        print_record_N_gzip(outfile2, fqrec2, qualtype);
+                    }
+                    else {
                         print_record_gzip (single_gzip, fqrec1, p1cut);
                     }
                 }
@@ -488,7 +512,7 @@ int paired_main(int argc, char *argv[]) {
             int write_orphan = 1;
             
             if (recheck_orphans) {
-                p2cut = sliding_window(fqrec2, qualtype, orphan_length_threshold, orphan_qual_threshold, no_fiveprime, trunc_n, debug);
+                p2cut = sliding_window(fqrec2, qualtype, orphan_length_threshold, orphan_qual_threshold, no_fiveprime, trunc_n, trunc_size, debug);
                 if (p2cut->three_prime_cut < 0) {
                     if (debug) printf("p2 orhpan discarded");
                     write_orphan = 0;
@@ -501,14 +525,22 @@ int paired_main(int argc, char *argv[]) {
                     if (combo_all) {
                         print_record_N (combo, fqrec1, qualtype);
                         print_record (combo, fqrec2, p2cut);
-                    } else {
+                    } else if (split_all) {
+                        print_record_N(outfile1, fqrec1, qualtype);
+                        print_record(outfile2, fqrec2, p2cut);
+                    }
+                    else {
                         print_record (single, fqrec2, p2cut);
                     }
                 } else {
                     if (combo_all) {
                         print_record_N_gzip (combo_gzip, fqrec1, qualtype);
                         print_record_gzip (combo_gzip, fqrec2, p2cut);
-                    } else {
+                    } else if (split_all) {
+                        print_record_N_gzip(outfile1, fqrec1, qualtype);
+                        print_record_gzip(outfile2, fqrec2, p2cut);
+                    }
+                    else {
                         print_record_gzip (single_gzip, fqrec2, p2cut);
                     }
                 }

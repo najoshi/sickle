@@ -23,6 +23,7 @@ static struct option single_long_options[] = {
     {"length-threshold", optional_argument, 0, 'l'},
     {"no-fiveprime", optional_argument, 0, 'x'},
     {"discard-n", optional_argument, 0, 'n'},
+    {"trunc-size", optional_argument, 0, 'N'},
     {"gzip-output", optional_argument, 0, 'g'},
     {"quiet", optional_argument, 0, 'z'},
     {GETOPT_HELP_OPTION_DECL},
@@ -43,6 +44,7 @@ Options:\n\
 -l, --length-threshold, Threshold to keep a read based on length after trimming. Default 20.\n\
 -x, --no-fiveprime, Don't do five prime trimming.\n\
 -n, --trunc-n, Truncate sequences at position of first N.\n\
+-N, --truncate-size, Truncate sequences at a maximum length.\n\
 -g, --gzip-output, Output gzipped files.\n\
 --quiet, Don't print out any trimming information\n\
 --help, display this help and exit\n\
@@ -71,6 +73,7 @@ int single_main(int argc, char *argv[]) {
     int quiet = 0;
     int no_fiveprime = 0;
     int trunc_n = 0;
+    int trunc_size = -1;
     int gzip_output = 0;
     int total=0;
 
@@ -131,7 +134,9 @@ int single_main(int argc, char *argv[]) {
         case 'n':
             trunc_n = 1;
             break;
-
+        case 'N':
+            trunc_size = atoi(optarg);
+            break;
         case 'g':
             gzip_output = 1;
             break;
@@ -192,7 +197,7 @@ int single_main(int argc, char *argv[]) {
 
     while ((l = kseq_read(fqrec)) >= 0) {
 
-        p1cut = sliding_window(fqrec, qualtype, single_length_threshold, single_qual_threshold, no_fiveprime, trunc_n, debug);
+        p1cut = sliding_window(fqrec, qualtype, single_length_threshold, single_qual_threshold, no_fiveprime, trunc_n, trunc_size, debug);
         total++;
 
         if (debug) printf("P1cut: %d,%d\n", p1cut->five_prime_cut, p1cut->three_prime_cut);

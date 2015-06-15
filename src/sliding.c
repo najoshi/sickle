@@ -32,8 +32,11 @@ int get_quality_num (char qualchar, int qualtype, kseq_t *fqrec, int pos) {
 }
 
 
-cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int qual_threshold, int no_fiveprime, int trunc_n, int debug) {
-
+cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int qual_threshold, int no_fiveprime, int trunc_n, int trunc_size, int debug) {
+    if (trunc_size >= 0 && trunc_size < length_threshold) {
+        trunc_size = length_threshold;
+    }
+    
 	int window_size = (int) (0.1 * fqrec->seq.l);
 	int i,j;
 	int window_start=0;
@@ -129,6 +132,24 @@ cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int
     }
 
     if (debug) printf ("\n\n");
+
+    /* if trunc_size is less than read length, remove equal number of bases from each side */
+    /* TODO: this should acutally remove bases based on quality */
+    
+    
+    if (trunc_size >= 0) {
+        int side = 0;
+        while (trunc_size < three_prime_cut - five_prime_cut) {
+            if (side == 0) {
+                five_prime_cut++;
+                side = 1;
+            }
+            else {
+                three_prime_cut--;
+                side = 0;
+            }
+        }
+    }
 
 	retvals = (cutsites*) malloc (sizeof(cutsites));
 	retvals->three_prime_cut = three_prime_cut;
