@@ -16,8 +16,6 @@ default: build
 sliding.o: $(SDIR)/sliding.c $(SDIR)/kseq.h $(SDIR)/sickle.h
 	$(CC) $(CFLAGS) $(OPT) -c $(SDIR)/$*.c
 
-vector.o: $(SDIR)/vector.c $(SDIR)/kseq.h $(SDIR)/sickle.h
-	$(CC) $(CFLAGS) $(OPT) -c $(SDIR)/$*.c
 
 trim_single.o: $(SDIR)/trim_single.c $(SDIR)/sickle.h $(SDIR)/kseq.h
 	$(CC) $(CFLAGS) $(OPT) -c $(SDIR)/$*.c
@@ -40,7 +38,7 @@ distclean: clean
 dist:
 	tar -zcf $(ARCHIVE).tar.gz src Makefile README.md sickle.xml LICENSE
 
-build: sliding.o trim_single.o trim_paired.o sickle.o print_record.o vector.o
+build: sliding.o trim_single.o trim_paired.o sickle.o print_record.o
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OPT) $? -o sickle $(LIBS)
 
 debug:
