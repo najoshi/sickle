@@ -20,6 +20,7 @@ static struct option paired_long_options[] = {
 
     /* MODIFIED BY @dstreett*/
 
+    {"tab-delimited", no_argument, 0, 'T'},
     {"polyA-trimming", no_argument, 0, 'a'},
     {"qual-type", required_argument, 0, 't'},
     {"pe-file1", required_argument, 0, 'f'},
@@ -141,18 +142,17 @@ int paired_main(int argc, char *argv[]) {
     int r2_check = 0;
     int polyA_error = 3;
     int polyA_min = 10;
+    int tab = 0;
 
     while (1) {
         int option_index = 0;
-        optc = getopt_long(argc, argv, "adf:r:c:t:o:p:m:M:s:q:l:xngA:E:", paired_long_options, &option_index);
+        optc = getopt_long(argc, argv, "adf:r:c:t:o:p:m:M:s:q:l:xngA:E:T", paired_long_options, &option_index);
 
         if (optc == -1)
             break;
-
         switch (optc) {
             if (paired_long_options[option_index].flag != 0)
                 break;
-
 	case 'a':
 	    poly_trimming = 1;
 	    break;
@@ -192,7 +192,9 @@ int paired_main(int argc, char *argv[]) {
                 return EXIT_FAILURE;
             }
             break;
-
+	case 'T':
+	    tab = 1;		
+	    break;
         case 'o':
             outfn1 = (char *) malloc(strlen(optarg) + 1);
             strcpy(outfn1, optarg);
@@ -424,7 +426,7 @@ int paired_main(int argc, char *argv[]) {
         
 	/*First we will trim poly-a tails if user imputs it*/
 
-
+	/*
 	int first3, first5, second3, second5;
 
 	p1cut = vectorized_sliding_window(fqrec1, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n, debug);
@@ -433,10 +435,10 @@ int paired_main(int argc, char *argv[]) {
 	first5 = p1cut->five_prime_cut;
 	second3 = p2cut->three_prime_cut;
 	second5 = p2cut->five_prime_cut;
-	
+	*/	
 	p1cut = sliding_window(fqrec1, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n, debug);
         p2cut = sliding_window(fqrec2, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n, debug);
-	
+/*
 	printf("%d\t%d\n", first5, p1cut->five_prime_cut);
 	if (first5 == p1cut->five_prime_cut) {
 		printf("5 - good\n");
@@ -449,7 +451,7 @@ int paired_main(int argc, char *argv[]) {
 	} else {
 		printf("3 - bad\n");
 	}
-
+*/
 
 	r1_check = 0;
 	r2_check = 0;
@@ -531,7 +533,9 @@ int paired_main(int argc, char *argv[]) {
         /* if both sequences passed quality and length filters, then output both records */
         if (p1cut->three_prime_cut >= 0 && p2cut->three_prime_cut >= 0) {
             if (!gzip_output) {
-                if (pec) {
+		if (tab) {
+		    print_record_tab(combo, fqrec1, fqrec2, p1cut, p2cut);
+                } else if (pec) {
                     print_record (combo, fqrec1, p1cut);
                     print_record (combo, fqrec2, p2cut);
                 } else {
