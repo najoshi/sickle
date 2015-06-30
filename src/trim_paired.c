@@ -425,10 +425,32 @@ int paired_main(int argc, char *argv[]) {
 	/*First we will trim poly-a tails if user imputs it*/
 
 
+	int first3, first5, second3, second5;
 
+	p1cut = vectorized_sliding_window(fqrec1, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n, debug);
+        p2cut = vectorized_sliding_window(fqrec2, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n, debug);
+	first3 = p1cut->three_prime_cut;
+	first5 = p1cut->five_prime_cut;
+	second3 = p2cut->three_prime_cut;
+	second5 = p2cut->five_prime_cut;
+	
 	p1cut = sliding_window(fqrec1, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n, debug);
         p2cut = sliding_window(fqrec2, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n, debug);
 	
+	printf("%d\t%d\n", first5, p1cut->five_prime_cut);
+	if (first5 == p1cut->five_prime_cut) {
+		printf("5 - good\n");
+	} else {
+		printf("5 - bad\n");
+	}
+
+	if (first3 == p1cut->three_prime_cut) {
+		printf("3 - good\n");
+	} else {
+		printf("3 - bad\n");
+	}
+
+
 	r1_check = 0;
 	r2_check = 0;
 
