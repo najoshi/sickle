@@ -378,8 +378,8 @@ int paired_main(int argc, char *argv[]) {
         p2cut = sliding_window(fqrec2, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n, debug);
         total += 2;
 
-        if (debug) printf("p1cut: %d,%d\n", p1cut->five_prime_cut, p1cut->three_prime_cut);
-        if (debug) printf("p2cut: %d,%d\n", p2cut->five_prime_cut, p2cut->three_prime_cut);
+        if (debug) fprintf(stderr, "p1cut: %d,%d\n", p1cut->five_prime_cut, p1cut->three_prime_cut);
+        if (debug) fprintf(stderr, "p2cut: %d,%d\n", p2cut->five_prime_cut, p2cut->three_prime_cut);
 
         /* The sequence and quality print statements below print out the sequence string starting from the 5' cut */
         /* and then only print out to the 3' cut, however, we need to adjust the 3' cut */
@@ -480,17 +480,17 @@ int paired_main(int argc, char *argv[]) {
     }
 
     if (!quiet) {
-        if (infn1 && infn2) fprintf(stdout, "\nPE forward file: %s\nPE reverse file: %s\n", infn1, infn2);
-        if (infnc) fprintf(stdout, "\nPE interleaved file: %s\n", infnc);
-        fprintf(stdout, "\nTotal input FastQ records: %d (%d pairs)\n", total, (total / 2));
-        fprintf(stdout, "\nFastQ paired records kept: %d (%d pairs)\n", kept_p, (kept_p / 2));
-        if (pec) fprintf(stdout, "FastQ single records kept: %d\n", (kept_s1 + kept_s2));
-        else fprintf(stdout, "FastQ single records kept: %d (from PE1: %d, from PE2: %d)\n", (kept_s1 + kept_s2), kept_s1, kept_s2);
+        if (infn1 && infn2) fprintf(stderr, "\nPE forward file: %s\nPE reverse file: %s\n", infn1, infn2);
+        if (infnc) fprintf(stderr, "\nPE interleaved file: %s\n", infnc);
+        fprintf(stderr, "\nTotal input FastQ records: %d (%d pairs)\n", total, (total / 2));
+        fprintf(stderr, "\nFastQ paired records kept: %d (%d pairs)\n", kept_p, (kept_p / 2));
+        if (pec) fprintf(stderr, "FastQ single records kept: %d\n", (kept_s1 + kept_s2));
+        else fprintf(stderr, "FastQ single records kept: %d (from PE1: %d, from PE2: %d)\n", (kept_s1 + kept_s2), kept_s1, kept_s2);
 
-        fprintf(stdout, "FastQ paired records discarded: %d (%d pairs)\n", discard_p, (discard_p / 2));
+        fprintf(stderr, "FastQ paired records discarded: %d (%d pairs)\n", discard_p, (discard_p / 2));
 
-        if (pec) fprintf(stdout, "FastQ single records discarded: %d\n\n", (discard_s1 + discard_s2));
-        else fprintf(stdout, "FastQ single records discarded: %d (from PE1: %d, from PE2: %d)\n\n", (discard_s1 + discard_s2), discard_s1, discard_s2);
+        if (pec) fprintf(stderr, "FastQ single records discarded: %d\n\n", (discard_s1 + discard_s2));
+        else fprintf(stderr, "FastQ single records discarded: %d (from PE1: %d, from PE2: %d)\n\n", (discard_s1 + discard_s2), discard_s1, discard_s2);
     }
 
     kseq_destroy(fqrec1);
