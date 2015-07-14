@@ -195,7 +195,7 @@ int single_main(int argc, char *argv[]) {
         p1cut = sliding_window(fqrec, qualtype, single_length_threshold, single_qual_threshold, no_fiveprime, trunc_n, debug);
         total++;
 
-        if (debug) printf("P1cut: %d,%d\n", p1cut->five_prime_cut, p1cut->three_prime_cut);
+        if (debug) fprintf(stderr, "P1cut: %d,%d\n", p1cut->five_prime_cut, p1cut->three_prime_cut);
 
         /* if sequence quality and length pass filter then output record, else discard */
         if (p1cut->three_prime_cut >= 0) {
@@ -217,7 +217,7 @@ int single_main(int argc, char *argv[]) {
         free(p1cut);
     }
 
-    if (!quiet) fprintf(stdout, "\nSE input file: %s\n\nTotal FastQ records: %d\nFastQ records kept: %d\nFastQ records discarded: %d\n\n", infn, total, kept, discard);
+    if (!quiet) fprintf(stderr, "\nSE input file: %s\n\nTotal FastQ records: %d\nFastQ records kept: %d\nFastQ records discarded: %d\n\n", infn, total, kept, discard);
 
     kseq_destroy(fqrec);
     gzclose(se);
