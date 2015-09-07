@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<tool_dependency>
+    <package name="zlib" version="1.2.8">
+        <repository name="package_zlib_1_2_8" owner="iuc" prior_installation_required="True" />
+    </package>
+    <package name="sickle" version="1.33">
+        <install version="1.0">
+            <actions>
+                <action type="download_by_url" target_filename="sickle-1.33.tar.gz">https://github.com/najoshi/sickle/archive/v1.33.tar.gz</action>
+                <action type="set_environment_for_install">
+                    <repository name="package_zlib_1_2_8" owner="iuc">
+                        <package name="zlib" version="1.2.8" />
+                    </repository>
+                </action>
+                <action type="shell_command">make</action>
+                <action type="move_file">
+                    <source>sickle</source>
+                    <destination>$INSTALL_DIR/bin</destination>
+                </action>
+                <action type="set_environment">
+                    <environment_variable name="PATH" action="prepend_to">$INSTALL_DIR/bin</environment_variable>
+                </action>
+            </actions>
+        </install>
+        <readme>
+Sickle is a windowed adaptive trimming tool for FASTQ files using quality.
+        </readme>
+    </package>
+</tool_dependency>
