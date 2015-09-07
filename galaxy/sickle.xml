@@ -1,0 +1,264 @@
+<tool id="sickle" name="Sickle" version="1.33">
+    <description>windowed adaptive trimming of FASTQ data</description>
+    <requirements>
+        <requirement type="package" version="1.33">sickle</requirement>
+    </requirements>
+    <version_command>sickle --version | head -n 1</version_command>
+    <command>
+        sickle
+
+        #if str($readtype.single_or_paired) == "se":
+            se -f "${readtype.input_single}" -o "$output_single"
+
+            #if $readtype.input_single.ext in ("fastq", "fastqsanger"):
+                -t sanger
+            #else if $readtype.input_single.ext == "fastqillumina":
+                -t illumina
+            #else if $readtype.input_single.ext == "fastqsolexa":
+                -t solexa
+            #end if
+        #end if
+
+        #if str($readtype.single_or_paired) == "pe_combo":
+            #if $readtype.output_n:
+                pe -c "${readtype.input_combo}" -M "$output_combo"
+            #else
+                pe -c "${readtype.input_combo}" -m "$output_combo" -s "$output_combo_single"
+            #end if
+
+            #if $readtype.input_combo.ext in ("fastq", "fastqsanger"):
+                -t sanger
+            #else if $readtype.input_combo.ext == "fastqillumina":
+                -t illumina
+            #else if $readtype.input_combo.ext == "fastqsolexa":
+                -t solexa
+            #end if
+        #end if
+
+        #if str($readtype.single_or_paired) == "pe_sep":
+            pe -f "${readtype.input_paired1}" -r "${readtype.input_paired2}" -o "$output_paired1" -p "$output_paired2" -s "$output_paired_single"
+
+            #if $readtype.input_paired1.ext in ("fastq", "fastqsanger"):
+                -t sanger
+            #else if $readtype.input_paired1.ext == "fastqillumina":
+                -t illumina
+            #else if $readtype.input_paired1.ext == "fastqsolexa":
+                -t solexa
+            #end if
+        #end if
+
+        #if str($qual_threshold) != "":
+            -q $qual_threshold
+        #end if
+
+        #if str($length_threshold) != "":
+            -l $length_threshold
+        #end if
+
+        #if $no_five_prime:
+            -x
+        #end if
+
+        #if $trunc_n:
+            -n
+        #end if
+    </command>
+
+    <inputs>
+        <conditional name="readtype">
+            <param name="single_or_paired" type="select" label="Single-end or paired-end reads?" help="Note: Sickle will infer the quality type of the file from its datatype.  I.e., if the datatype is fastqsanger, then the quality type is sanger. The default is fastqsanger.">
+                <option value="se" selected="true">Single-end</option>
+                <option value="pe_combo">Paired-end (one interleaved input file)</option>
+                <option value="pe_sep">Paired-end (two separate input files)</option>
+            </param>
+
+            <when value="se">
+                <param format="fastq" name="input_single" type="data" label="Single-end FASTQ reads" help="(-f)" />
+            </when>
+
+            <when value="pe_combo">
+                <param format="fastq" name="input_combo" type="data" label="Paired-end interleaved FASTQ reads" help="(-c)" />
+                <param name="output_n" type="boolean" label="Output only one file with all reads" help="This will output only one file with all the reads, where the reads that did not pass filter will be replaced with a single 'N', rather than discarded."/>
+            </when>
+
+            <when value="pe_sep">
+                <param format="fastq" name="input_paired1" type="data" label="Paired-end forward strand FASTQ reads" help="(-f)" />
+                <param format="fastq" name="input_paired2" type="data" label="Paired-end reverse strand FASTQ reads" help="(-r)" />
+            </when>
+        </conditional>
+
+        <param name="qual_threshold" value="20" min="0" type="integer" optional="true" label="Quality threshold" help="(-q)" />
+
+        <param name="length_threshold" value="20" min="0" type="integer" optional="true" label="Length threshold" help="(-l)" />
+
+        <param name="no_five_prime" type="boolean" label="Don't do 5' trimming" help="(-x)" />
+        <param name="trunc_n" type="boolean" label="Truncate sequences with Ns at first N position" help="(-n)" />
+    </inputs>
+
+    <outputs>
+        <data name="output_single" format_source="input_single" label="Single-end output of ${tool.name} on ${on_string}">
+            <filter>readtype['single_or_paired'] == 'se'</filter>
+        </data>
+
+        <data name="output_combo" format_source="input_combo" label="Paired-end interleaved output of ${tool.name} on ${on_string}">
+            <filter>readtype['single_or_paired'] == 'pe_combo'</filter>
+        </data>
+
+        <data name="output_combo_single" format_source="input_combo" label="Singletons from paired-end interleaved output of ${tool.name} on ${on_string}">
+            <filter>readtype['single_or_paired'] == 'pe_combo' and not readtype['output_n']</filter>
+        </data>
+
+        <data name="output_paired1" format_source="input_paired1" label="Paired-end forward strand output of ${tool.name} on ${on_string}">
+            <filter>readtype['single_or_paired'] == 'pe_sep'</filter>
+        </data>
+
+        <data name="output_paired2" format_source="input_paired2" label="Paired-end reverse strand output of ${tool.name} on ${on_string}">
+            <filter>readtype['single_or_paired'] == 'pe_sep'</filter>
+        </data>
+
+        <data name="output_paired_single" format_source="input_paired1" label="Singletons from paired-end output of ${tool.name} on ${on_string}">
+            <filter>readtype['single_or_paired'] == 'pe_sep'</filter>
+        </data>
+    </outputs>
+    <tests>
+        <test>
+            <param name="single_or_paired" value="pe_combo" />
+            <param name="input_combo" value="test.fastq" />
+            <param name="qual_threshold" value="34" />
+            <output name="output_combo" file="output.c1.fastq" />
+            <output name="output_combo_single" file="output.s.fastq" />
+        </test>
+        <test>
+            <param name="single_or_paired" value="pe_combo" />
+            <param name="input_combo" value="test.fastq" />
+            <param name="qual_threshold" value="34" />
+            <param name="output_n" value="true" />
+            <output name="output_combo" file="output.c2.fastq" />
+        </test>
+        <test>
+            <param name="single_or_paired" value="pe_sep" />
+            <param name="input_paired1" value="test.f.fastq" />
+            <param name="input_paired2" value="test.r.fastq" />
+            <param name="qual_threshold" value="34" />
+            <output name="output_paired1" file="output.f.fastq" />
+            <output name="output_paired2" file="output.r.fastq" />
+            <output name="output_paired_single" file="output.s.fastq" />
+        </test>
+    </tests>
+    <help>
+**Sickle - A windowed adaptive trimming tool for FASTQ files using quality**
+
+.. class:: infomark
+
+**About**
+
+Most modern sequencing technologies produce reads that have
+deteriorating quality towards the 3'-end and some towards the 5'-end
+as well. Incorrectly called bases in both regions negatively impact
+assembles, mapping, and downstream bioinformatics analyses.
+
+Sickle is a tool that uses sliding windows along with quality and
+length thresholds to determine when quality is sufficiently low to
+trim the 3'-end of reads and also determines when the quality is
+sufficiently high enough to trim the 5'-end of reads.  It will also
+discard reads based upon the length threshold.  It takes the quality
+values and slides a window across them whose length is 0.1 times the
+length of the read.  If this length is less than 1, then the window is
+set to be equal to the length of the read.  Otherwise, the window
+slides along the quality values until the average quality in the
+window rises above the threshold, at which point the algorithm
+determines where within the window the rise occurs and cuts the read
+and quality there for the 5'-end cut.  Then when the average quality
+in the window drops below the threshold, the algorithm determines
+where in the window the drop occurs and cuts both the read and quality
+strings there for the 3'-end cut.  However, if the length of the
+remaining sequence is less than the minimum length threshold, then the
+read is discarded entirely (or replaced with an "N" record). 5'-end
+trimming can be disabled. Sickle also has an option to truncate reads
+with Ns at the first N position.
+
+Sickle supports three types of quality values: Illumina, Solexa, and
+Sanger. Note that the Solexa quality setting is an approximation (the
+actual conversion is a non-linear transformation). The end
+approximation is close. Illumina quality refers to qualities encoded
+with the CASAVA pipeline between versions 1.3 and 1.7.  Illumina
+quality using CASAVA >= 1.8 is Sanger encoded. The quality value will
+be determined from the datatype of the data, i.e. a fastqsanger datatype
+is assumed to be Sanger encoded.
+
+Note that Sickle will remove the 2nd FASTQ record header (on the "+"
+line) and replace it with simply a "+". This is the default format for
+CASAVA >= 1.8.
+
+-----
+
+.. class:: infomark
+
+**Options**
+
+**Single-end**
+
+This option takes one single-end input file and outputs one single-end
+output file of reads that passed the filters.
+
+**Paired-End (one interleaved input file)**
+
+This option takes as input one interleaved paired-end file. If you then
+check the "Output only one file with all reads" checkbox, it will output
+one interleaved file where any read that did not pass filter will be replaced
+with a FASTQ record where the sequence is a single "N" and the quality is the
+lowest quality possible for that quality type. This will preserve the paired
+nature of the data. If you leave the checkbox unchecked, it will output two files,
+one interleaved file with all the passed pairs and one singletons file where only
+one of the pair passed filter.
+
+**Paired-End (two separate input files)**
+
+This option takes two separate (forward and reverse) paired-end files as input.
+The output is three files: Two paired-end files with pairs that passed filter and
+a singletons file where only one of the pair passed filter.
+
+**Quality threshold**
+
+Input your desired quality threshold. This threshold is phred-scaled, which is typically
+values between 0-41 for FASTQ data.
+
+**Length threshold**
+
+Input your desired length threshold. This is the threshold to determine if a read is kept
+after all the trimming steps are done.
+
+**Disable 5-prime trimming**
+
+An option to disable trimming the read on the 5-prime end. This trimming trims the read
+if the average quality values dip below the quality threshold at the 5-prime end.
+
+**Truncate sequences with Ns**
+
+This option will trim a read at the first "N" base in the read after doing quality trimming.
+It is then still subject to the length threshold.
+
+-----
+
+.. class:: infomark
+
+**Citation**
+
+Sickle doesn't have a paper, but you can cite it like this::
+
+    Joshi NA, Fass JN. (2011). Sickle: A windowed adaptive trimming tool for FASTQ files
+    using quality (Version 1.33) [Software].  Available at https://github.com/najoshi/sickle.
+
+-----
+
+Copyright: Nikhil Joshi
+
+http://bioinformatics.ucdavis.edu
+
+http://github.com/ucdavis-bioinformatics
+
+http://github.com/najoshi
+    </help>
+    <citations>
+    </citations>
+</tool>
