@@ -7,12 +7,9 @@
 #include "sickle.h"
 #include "kseq.h"
 
-
 void print_record_tab (FILE *fp, kseq_t *fqr1, kseq_t *fqr2, cutsites *cs1, cutsites *cs2) {
 
     fprintf(fp, "@%s", fqr1->name.s);
-    if (fqr1->comment.l) fprintf(fp, " %s\t", fqr1->comment.s);
-    else fprintf(fp, "\t");
     fprintf(fp, "%.*s\t", cs1->three_prime_cut - cs1->five_prime_cut, fqr1->seq.s + cs1->five_prime_cut);
     fprintf(fp, "%.*s\t", cs1->three_prime_cut - cs1->five_prime_cut, fqr1->qual.s + cs1->five_prime_cut);
     fprintf(fp, "%.*s\t", cs2->three_prime_cut - cs2->five_prime_cut, fqr2->seq.s + cs2->five_prime_cut);
