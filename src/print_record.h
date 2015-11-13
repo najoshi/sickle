@@ -6,6 +6,7 @@
 #include "kseq.h"
 
 void print_record_tab (FILE *fp, kseq_t *fqr1, kseq_t *fqr2, cutsites *cs1, cutsites *cs2);
+void print_record_tab_s (FILE *fp, kseq_t *fqr, cutsites *cs);
 void print_record (FILE *fp, kseq_t *fqr, cutsites *cs);
 void print_record_gzip (gzFile fp, kseq_t *fqr, cutsites *cs);
 void print_record_N (FILE *fp, kseq_t *fqr, int qualtype);
