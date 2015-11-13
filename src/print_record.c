@@ -25,6 +25,13 @@ void print_record (FILE *fp, kseq_t *fqr, cutsites *cs) {
     fprintf(fp, "+\n");
     fprintf(fp, "%.*s\n", cs->three_prime_cut - cs->five_prime_cut, fqr->qual.s + cs->five_prime_cut);
 }
+void print_record_s (FILE *fp, kseq_t *fqr, cutsites *cs) {
+    fprintf(fp, "@%s\t", fqr->name.s);
+    fprintf(fp, "%.*s\t", cs->three_prime_cut - cs->five_prime_cut, fqr->seq.s + cs->five_prime_cut);
+    fprintf(fp, "+\t");
+    fprintf(fp, "%.*s\t", cs->three_prime_cut - cs->five_prime_cut, fqr->qual.s + cs->five_prime_cut);
+}
+
 
 void print_record_gzip (gzFile fp, kseq_t *fqr, cutsites *cs) {
     gzprintf(fp, "@%s", fqr->name.s);

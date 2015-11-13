@@ -15,7 +15,16 @@ __KSEQ_READ
 int single_qual_threshold = 20;
 int single_length_threshold = 20;
 
+void print_record_single (FILE *fp, kseq_t *fqr, cutsites *cs) {
+        fprintf(fp, "@%s\t", fqr->name.s);
+            fprintf(fp, "%.*s\t", cs->three_prime_cut - cs->five_prime_cut, fqr->seq.s + cs->five_prime_cut);
+                fprintf(fp, "+\t");
+                    fprintf(fp, "%.*s\t", cs->three_prime_cut - cs->five_prime_cut, fqr->qual.s + cs->five_prime_cut);
+}
+
+
 static struct option single_long_options[] = {
+    {"tab-delimited", no_argument, 0, 'T'},
     {"polyA-trimming", no_argument, 0, 'a'},
     {"fastq-file", required_argument, 0, 'f'},
     {"output-file", required_argument, 0, 'o'},
@@ -86,7 +95,7 @@ int single_main(int argc, char *argv[]) {
     int r1_check = 0;
     int polyA_error = 3;
     int polyA_min = 10;
-
+    int tab = 0;
     while (1) {
         int option_index = 0;
         optc = getopt_long(argc, argv, "adf:t:o:q:l:zxngA:E:", single_long_options, &option_index);
@@ -97,6 +106,9 @@ int single_main(int argc, char *argv[]) {
         switch (optc) {
             if (single_long_options[option_index].flag != 0)
                 break;
+	case 'T':
+	    tab = 1;		
+	    break;
 	case 'a':
 	    poly_trimming=1;
 	    break;		
@@ -268,7 +280,9 @@ int single_main(int argc, char *argv[]) {
 
         /* if sequence quality and length pass filter then output record, else discard */
         if (p1cut->three_prime_cut >= 0 && (p1cut->three_prime_cut - p1cut->five_prime_cut) >= single_length_threshold) {
-            if (!gzip_output) {
+		    if (tab) {
+                print_record_single(outfile, fqrec, p1cut);
+            } else if (!gzip_output) {
                 /* This print statement prints out the sequence string starting from the 5' cut */
                 /* and then only prints out to the 3' cut, however, we need to adjust the 3' cut */
                 /* by subtracting the 5' cut because the 3' cut was calculated on the original sequence */
