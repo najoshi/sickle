@@ -15,7 +15,17 @@ __KSEQ_READ
 int single_qual_threshold = 20;
 int single_length_threshold = 20;
 
+void print_record_single (FILE *fp, kseq_t *fqr, cutsites *cs) {
+        fprintf(fp, "@%s\t", fqr->name.s);
+            fprintf(fp, "%.*s\t", cs->three_prime_cut - cs->five_prime_cut, fqr->seq.s + cs->five_prime_cut);
+                fprintf(fp, "+\t");
+                    fprintf(fp, "%.*s\t", cs->three_prime_cut - cs->five_prime_cut, fqr->qual.s + cs->five_prime_cut);
+}
+
+
 static struct option single_long_options[] = {
+    {"tab-delimited", no_argument, 0, 'T'},
+    {"polyA-trimming", no_argument, 0, 'a'},
     {"fastq-file", required_argument, 0, 'f'},
     {"output-file", required_argument, 0, 'o'},
     {"qual-type", required_argument, 0, 't'},
@@ -32,21 +42,25 @@ static struct option single_long_options[] = {
 
 void single_usage(int status, char *msg) {
 
-    fprintf(stderr, "\nUsage: %s se [options] -f <fastq sequence file> -t <quality type> -o <trimmed fastq file>\n\
-\n\
-Options:\n\
--f, --fastq-file, Input fastq file (required)\n\
--t, --qual-type, Type of quality values (solexa (CASAVA < 1.3), illumina (CASAVA 1.3 to 1.7), sanger (which is CASAVA >= 1.8)) (required)\n\
--o, --output-file, Output trimmed fastq file (required)\n", PROGRAM_NAME);
+    fprintf(stderr, "\nUsage: %s se [options] -f <fastq sequence file> -t <quality type> -o <trimmed fastq file>\n"
+"\n"
+"Options:\n"
+"-f, --fastq-file, Input fastq file (required)\n"
+"-t, --qual-type, Type of quality values (solexa (CASAVA < 1.3), illumina (CASAVA 1.3 to 1.7), sanger (which is CASAVA >= 1.8)) (required)\n"
+"-o, --output-file, Output trimmed fastq file (required)\n", PROGRAM_NAME);
 
-    fprintf(stderr, "-q, --qual-threshold, Threshold for trimming based on average quality in a window. Default 20.\n\
--l, --length-threshold, Threshold to keep a read based on length after trimming. Default 20.\n\
--x, --no-fiveprime, Don't do five prime trimming.\n\
--n, --trunc-n, Truncate sequences at position of first N.\n\
--g, --gzip-output, Output gzipped files.\n\
---quiet, Don't print out any trimming information\n\
---help, display this help and exit\n\
---version, output version information and exit\n\n");
+    fprintf(stderr, "-q, --qual-threshold, Threshold for trimming based on average quality in a window. Default 20.\n"
+"-l, --length-threshold, Threshold to keep a read based on length after trimming. Default 20.\n"
+"-x, --no-fiveprime, Don't do five prime trimming.\n"
+"-n, --trunc-n, Truncate sequences at position of first N.\n, --polyA-min, Minimum length of Poly-A or Poly-T tail to trim\n"
+"-a, --polyA-trimming, Turn on Poly-A or Poly-T tail trimmng\n"
+"-A, --polyA-min, Minimum length of Poly-A or Poly-T tail to trim. Default 10\n");
+
+    fprintf(stderr, "-E, --polyA-error, Maximum amount of errors allowed in Poly-A or Poly-T tail in when trimming. Default 3\n"
+"-g, --gzip-output, Output gzipped files.\n"
+"--quiet, Don't print out any trimming information\n"
+"--help, display this help and exit\n"
+"--version, output version information and exit\n\n");
 
     if (msg) fprintf(stderr, "%s\n\n", msg);
     exit(status);
@@ -73,10 +87,18 @@ int single_main(int argc, char *argv[]) {
     int trunc_n = 0;
     int gzip_output = 0;
     int total=0;
-
+    int poly_trimming=0;
+    int cut_poly=0;
+    int r1_poly=0;
+    int five_prime_removed=0;
+    int three_prime_removed=0;
+    int r1_check = 0;
+    int polyA_error = 3;
+    int polyA_min = 10;
+    int tab = 0;
     while (1) {
         int option_index = 0;
-        optc = getopt_long(argc, argv, "df:t:o:q:l:zxng", single_long_options, &option_index);
+        optc = getopt_long(argc, argv, "adf:t:o:q:l:zxngA:E:", single_long_options, &option_index);
 
         if (optc == -1)
             break;
@@ -84,6 +106,24 @@ int single_main(int argc, char *argv[]) {
         switch (optc) {
             if (single_long_options[option_index].flag != 0)
                 break;
+	case 'T':
+	    tab = 1;		
+	    break;
+	case 'a':
+	    poly_trimming=1;
+	    break;		
+        case 'A':
+            polyA_min = atoi(optarg);
+            if (polyA_min < 0) {
+                fprintf(stderr, "PolyA Min tail must be larger than 0");
+            }
+            break;
+        case 'E':
+            polyA_error = atoi(optarg);
+            if (polyA_error < 0) {
+                fprintf(stderr, "PolyA Min tail must be larger than 0");
+            }
+            break;
 
         case 'f':
             infn = (char *) malloc(strlen(optarg) + 1);
@@ -168,14 +208,20 @@ int single_main(int argc, char *argv[]) {
     }
 
     se = gzopen(infn, "r");
+
     if (!se) {
         fprintf(stderr, "****Error: Could not open input file '%s'.\n\n", infn);
         return EXIT_FAILURE;
     }
 
     if (!gzip_output) {
-        outfile = fopen(outfn, "w");
-        if (!outfile) {
+	if (strcmp(outfn, "stdout") != 0 ) {
+ 	       outfile = fopen(outfn, "w");
+        } else {
+		outfile = stdout;
+	}
+
+	if (!outfile) {
             fprintf(stderr, "****Error: Could not open output file '%s'.\n\n", outfn);
             return EXIT_FAILURE;
         }
@@ -195,11 +241,48 @@ int single_main(int argc, char *argv[]) {
         p1cut = sliding_window(fqrec, qualtype, single_length_threshold, single_qual_threshold, no_fiveprime, trunc_n, debug);
         total++;
 
+	r1_check = 0;
+
+	if (poly_trimming) {
+ 		cut_poly =  fqrec->seq.l - trim_poly_a(fqrec->seq.s, polyA_min, polyA_error, fqrec->seq.l, 0) + 1;
+                p1cut->three_prime_cut = ((p1cut->three_prime_cut > cut_poly) ? cut_poly : p1cut->three_prime_cut);
+		if (cut_poly == p1cut->three_prime_cut) {
+			r1_check = 1;
+			r1_poly++;
+		}
+                cut_poly = trim_poly_t(fqrec->seq.s, polyA_min, polyA_error, 0, fqrec->seq.l);
+                p1cut->five_prime_cut = ((p1cut->five_prime_cut < cut_poly) ? cut_poly : p1cut->five_prime_cut);
+		if (cut_poly == p1cut->five_prime_cut && r1_check != 1) {
+			r1_check = 1;
+			r1_poly++;
+		}
+	
+	}
+
+
+	if (p1cut->three_prime_cut - p1cut->five_prime_cut <= single_length_threshold) {
+                p1cut->three_prime_cut = -1;
+                p1cut->five_prime_cut = -1;
+        } 
+
+	if (p1cut->three_prime_cut > 0) {
+                three_prime_removed += (fqrec->seq.l - p1cut->three_prime_cut);
+        }
+
+        if (p1cut->five_prime_cut > 0) {
+                five_prime_removed += p1cut->five_prime_cut;
+        }
+	
+
+
+
         if (debug) printf("P1cut: %d,%d\n", p1cut->five_prime_cut, p1cut->three_prime_cut);
 
         /* if sequence quality and length pass filter then output record, else discard */
-        if (p1cut->three_prime_cut >= 0) {
-            if (!gzip_output) {
+        if (p1cut->three_prime_cut >= 0 && (p1cut->three_prime_cut - p1cut->five_prime_cut) >= single_length_threshold) {
+		    if (tab) {
+                print_record_single(outfile, fqrec, p1cut);
+            } else if (!gzip_output) {
                 /* This print statement prints out the sequence string starting from the 5' cut */
                 /* and then only prints out to the 3' cut, however, we need to adjust the 3' cut */
                 /* by subtracting the 5' cut because the 3' cut was calculated on the original sequence */
@@ -217,8 +300,13 @@ int single_main(int argc, char *argv[]) {
         free(p1cut);
     }
 
-    if (!quiet) fprintf(stdout, "\nSE input file: %s\n\nTotal FastQ records: %d\nFastQ records kept: %d\nFastQ records discarded: %d\n\n", infn, total, kept, discard);
-
+    if (!quiet) {
+	fprintf(stderr, "SE input file: %s\n\nTotal FastQ records: %d\nFastQ records kept: %d\nFastQ records discarded: %d\n\n", infn, total, kept, discard);
+	if (poly_trimming) {
+		fprintf(stderr, "Poly AT tails: %d\n", r1_poly);
+	}
+	fprintf(stderr, "Base pairs left removed: %d\nBase pairs right removed: %d\n", five_prime_removed, three_prime_removed);
+    } 
     kseq_destroy(fqrec);
     gzclose(se);
     if (!gzip_output) fclose(outfile);

@@ -1,5 +1,5 @@
 PROGRAM_NAME = sickle
-VERSION = 1.33
+VERSION = 1.40
 CC = gcc
 CFLAGS = -Wall -pedantic -DVERSION=$(VERSION)
 DEBUG = -g
@@ -15,6 +15,7 @@ default: build
 
 sliding.o: $(SDIR)/sliding.c $(SDIR)/kseq.h $(SDIR)/sickle.h
 	$(CC) $(CFLAGS) $(OPT) -c $(SDIR)/$*.c
+
 
 trim_single.o: $(SDIR)/trim_single.c $(SDIR)/sickle.h $(SDIR)/kseq.h
 	$(CC) $(CFLAGS) $(OPT) -c $(SDIR)/$*.c

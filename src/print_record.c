@@ -7,6 +7,15 @@
 #include "sickle.h"
 #include "kseq.h"
 
+void print_record_tab (FILE *fp, kseq_t *fqr1, kseq_t *fqr2, cutsites *cs1, cutsites *cs2) {
+
+    fprintf(fp, "@%s", fqr1->name.s);
+    fprintf(fp, "%.*s\t", cs1->three_prime_cut - cs1->five_prime_cut, fqr1->seq.s + cs1->five_prime_cut);
+    fprintf(fp, "%.*s\t", cs1->three_prime_cut - cs1->five_prime_cut, fqr1->qual.s + cs1->five_prime_cut);
+    fprintf(fp, "%.*s\t", cs2->three_prime_cut - cs2->five_prime_cut, fqr2->seq.s + cs2->five_prime_cut);
+    fprintf(fp, "%.*s\n", cs2->three_prime_cut - cs2->five_prime_cut, fqr2->qual.s + cs2->five_prime_cut);
+}
+
 
 void print_record (FILE *fp, kseq_t *fqr, cutsites *cs) {
     fprintf(fp, "@%s", fqr->name.s);
@@ -16,6 +25,13 @@ void print_record (FILE *fp, kseq_t *fqr, cutsites *cs) {
     fprintf(fp, "+\n");
     fprintf(fp, "%.*s\n", cs->three_prime_cut - cs->five_prime_cut, fqr->qual.s + cs->five_prime_cut);
 }
+void print_record_s (FILE *fp, kseq_t *fqr, cutsites *cs) {
+    fprintf(fp, "@%s\t", fqr->name.s);
+    fprintf(fp, "%.*s\t", cs->three_prime_cut - cs->five_prime_cut, fqr->seq.s + cs->five_prime_cut);
+    fprintf(fp, "+\t");
+    fprintf(fp, "%.*s\t", cs->three_prime_cut - cs->five_prime_cut, fqr->qual.s + cs->five_prime_cut);
+}
+
 
 void print_record_gzip (gzFile fp, kseq_t *fqr, cutsites *cs) {
     gzprintf(fp, "@%s", fqr->name.s);
