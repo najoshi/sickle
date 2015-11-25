@@ -107,11 +107,11 @@ int single_main(int argc, char *argv[]) {
             if (single_long_options[option_index].flag != 0)
                 break;
 	case 'T':
-	    tab = 1;		
+	    tab = 1;
 	    break;
 	case 'a':
 	    poly_trimming=1;
-	    break;		
+	    break;
         case 'A':
             polyA_min = atoi(optarg);
             if (polyA_min < 0) {
@@ -272,27 +272,22 @@ int single_main(int argc, char *argv[]) {
         if (p1cut->five_prime_cut > 0) {
                 five_prime_removed += p1cut->five_prime_cut;
         }
-	
-
-
 
         if (debug) printf("P1cut: %d,%d\n", p1cut->five_prime_cut, p1cut->three_prime_cut);
 
         /* if sequence quality and length pass filter then output record, else discard */
         if (p1cut->three_prime_cut >= 0 && (p1cut->three_prime_cut - p1cut->five_prime_cut) >= single_length_threshold) {
-		    if (tab) {
-                print_record_single(outfile, fqrec, p1cut);
-            } else if (!gzip_output) {
+		if (tab) {
+                	print_record_tab_s(outfile, fqrec, p1cut);
+		} else if (!gzip_output) {
                 /* This print statement prints out the sequence string starting from the 5' cut */
                 /* and then only prints out to the 3' cut, however, we need to adjust the 3' cut */
                 /* by subtracting the 5' cut because the 3' cut was calculated on the original sequence */
-
-                print_record (outfile, fqrec, p1cut);
-            } else {
-                print_record_gzip (outfile_gzip, fqrec, p1cut);
-            }
-
-            kept++;
+			print_record (outfile, fqrec, p1cut);
+		} else {
+			print_record_gzip (outfile_gzip, fqrec, p1cut);
+		}
+		kept++;
         }
 
         else discard++;
