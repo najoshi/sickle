@@ -15,16 +15,9 @@ __KSEQ_READ
 int single_qual_threshold = 20;
 int single_length_threshold = 20;
 
-void print_record_single (FILE *fp, kseq_t *fqr, cutsites *cs) {
-        fprintf(fp, "@%s\t", fqr->name.s);
-            fprintf(fp, "%.*s\t", cs->three_prime_cut - cs->five_prime_cut, fqr->seq.s + cs->five_prime_cut);
-                fprintf(fp, "+\t");
-                    fprintf(fp, "%.*s\t", cs->three_prime_cut - cs->five_prime_cut, fqr->qual.s + cs->five_prime_cut);
-}
 
 
 static struct option single_long_options[] = {
-    {"tab-delimited", no_argument, 0, 'T'},
     {"polyA-trimming", no_argument, 0, 'a'},
     {"fastq-file", required_argument, 0, 'f'},
     {"output-file", required_argument, 0, 'o'},
@@ -35,6 +28,7 @@ static struct option single_long_options[] = {
     {"discard-n", no_argument, 0, 'n'},
     {"gzip-output", no_argument, 0, 'g'},
     {"quiet", no_argument, 0, 'z'},
+    {"tab-delimited", no_argument, 0, 'D'},
     {GETOPT_HELP_OPTION_DECL},
     {GETOPT_VERSION_OPTION_DECL},
     {NULL, 0, NULL, 0}
@@ -64,6 +58,13 @@ void single_usage(int status, char *msg) {
 
     if (msg) fprintf(stderr, "%s\n\n", msg);
     exit(status);
+}
+
+void print_record_single (FILE *fp, kseq_t *fqr, cutsites *cs) {
+        printf("@%s\t", fqr->name.s);
+        printf("%.*s\t", cs->three_prime_cut - cs->five_prime_cut, fqr->seq.s + cs->five_prime_cut);
+        printf("+\t");
+        printf("%.*s\t", cs->three_prime_cut - cs->five_prime_cut, fqr->qual.s + cs->five_prime_cut);
 }
 
 int single_main(int argc, char *argv[]) {
@@ -106,7 +107,7 @@ int single_main(int argc, char *argv[]) {
         switch (optc) {
             if (single_long_options[option_index].flag != 0)
                 break;
-	case 'T':
+	case 'D':
 	    tab = 1;		
 	    break;
 	case 'a':
