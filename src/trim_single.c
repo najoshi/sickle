@@ -28,7 +28,7 @@ static struct option single_long_options[] = {
     {"discard-n", no_argument, 0, 'n'},
     {"gzip-output", no_argument, 0, 'g'},
     {"quiet", no_argument, 0, 'z'},
-    {"tab-delimited", no_argument, 0, 'D'},
+    {"tab-delimited", no_argument, 0, 'T'},
     {GETOPT_HELP_OPTION_DECL},
     {GETOPT_VERSION_OPTION_DECL},
     {NULL, 0, NULL, 0}
@@ -99,7 +99,7 @@ int single_main(int argc, char *argv[]) {
     int tab = 0;
     while (1) {
         int option_index = 0;
-        optc = getopt_long(argc, argv, "adf:t:o:q:l:zxngA:E:", single_long_options, &option_index);
+        optc = getopt_long(argc, argv, "adf:t:o:q:l:zxngA:E:T", single_long_options, &option_index);
 
         if (optc == -1)
             break;
@@ -107,12 +107,12 @@ int single_main(int argc, char *argv[]) {
         switch (optc) {
             if (single_long_options[option_index].flag != 0)
                 break;
-	case 'D':
-	    tab = 1;		
+	case 'T':
+	    tab = 1;
 	    break;
 	case 'a':
 	    poly_trimming=1;
-	    break;		
+	    break;
         case 'A':
             polyA_min = atoi(optarg);
             if (polyA_min < 0) {
@@ -273,27 +273,22 @@ int single_main(int argc, char *argv[]) {
         if (p1cut->five_prime_cut > 0) {
                 five_prime_removed += p1cut->five_prime_cut;
         }
-	
-
-
 
         if (debug) printf("P1cut: %d,%d\n", p1cut->five_prime_cut, p1cut->three_prime_cut);
 
         /* if sequence quality and length pass filter then output record, else discard */
         if (p1cut->three_prime_cut >= 0 && (p1cut->three_prime_cut - p1cut->five_prime_cut) >= single_length_threshold) {
-		    if (tab) {
-                print_record_single(outfile, fqrec, p1cut);
-            } else if (!gzip_output) {
+		if (tab) {
+                	print_record_tab_s(outfile, fqrec, p1cut);
+		} else if (!gzip_output) {
                 /* This print statement prints out the sequence string starting from the 5' cut */
                 /* and then only prints out to the 3' cut, however, we need to adjust the 3' cut */
                 /* by subtracting the 5' cut because the 3' cut was calculated on the original sequence */
-
-                print_record (outfile, fqrec, p1cut);
-            } else {
-                print_record_gzip (outfile_gzip, fqrec, p1cut);
-            }
-
-            kept++;
+			print_record (outfile, fqrec, p1cut);
+		} else {
+			print_record_gzip (outfile_gzip, fqrec, p1cut);
+		}
+		kept++;
         }
 
         else discard++;
