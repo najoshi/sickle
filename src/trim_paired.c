@@ -559,7 +559,9 @@ int paired_main(int argc, char *argv[]) {
         /* or put an "N" record in if that option was chosen. */
         else if (p1cut->three_prime_cut >= 0 && p2cut->three_prime_cut < 0) {
             if (!gzip_output) {
-                if (combo_all) {
+                if (tab) {
+                    print_record_tab_s (combo, fqrec1, p1cut);
+                } else if (combo_all) {
                     print_record (combo, fqrec1, p1cut);
                     print_record_N (combo, fqrec2, qualtype);
                 } else {
@@ -580,7 +582,9 @@ int paired_main(int argc, char *argv[]) {
 
         else if (p1cut->three_prime_cut < 0 && p2cut->three_prime_cut >= 0) {
             if (!gzip_output) {
-                if (combo_all) {
+                if (tab) {
+                    print_record_tab_s (combo, fqrec1, p1cut);
+                } else if (combo_all) {
                     print_record_N (combo, fqrec1, qualtype);
                     print_record (combo, fqrec2, p2cut);
                 } else {
