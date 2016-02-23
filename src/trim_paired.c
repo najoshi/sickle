@@ -304,10 +304,10 @@ int paired_main(int argc, char *argv[]) {
         /* get combined output file */
         if (!gzip_output) {
             if (strcmp(outfnc, "stdout") != 0) {
-		combo = fopen(outfnc, "w");
-	    } else {
-		combo = stdout;
-	    }
+		        combo = fopen(outfnc, "w");
+	        } else {
+		        combo = stdout;
+	        }
             if (!combo) {
                 fprintf(stderr, "****Error: Could not open combo output file '%s'.\n\n", outfnc);
                 return EXIT_FAILURE;
