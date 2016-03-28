@@ -17,6 +17,11 @@ int paired_qual_threshold = 20;
 int paired_length_threshold = 20;
 
 static struct option paired_long_options[] = {
+
+    /* MODIFIED BY @dstreett*/
+
+    {"tab-delimited", no_argument, 0, 'T'},
+    {"polyA-trimming", no_argument, 0, 'a'},
     {"qual-type", required_argument, 0, 't'},
     {"pe-file1", required_argument, 0, 'f'},
     {"pe-file2", required_argument, 0, 'r'},
@@ -26,6 +31,8 @@ static struct option paired_long_options[] = {
     {"output-single", required_argument, 0, 's'},
     {"output-combo", required_argument, 0, 'm'},
     {"qual-threshold", required_argument, 0, 'q'},
+    {"polyA-min", required_argument, 0, 'A'},
+    {"polyA-error", required_argument, 0, 'E'},
     {"length-threshold", required_argument, 0, 'l'},
     {"no-fiveprime", no_argument, 0, 'x'},
     {"truncate-n", no_argument, 0, 'n'},
@@ -60,14 +67,18 @@ Paired-end interleaved reads\n\
 Global options\n\
 --------------\n\
 -t, --qual-type, Type of quality values (solexa (CASAVA < 1.3), illumina (CASAVA 1.3 to 1.7), sanger (which is CASAVA >= 1.8)) (required)\n");
-    fprintf(stderr, "-s, --output-single, Output trimmed singles fastq file\n\
--q, --qual-threshold, Threshold for trimming based on average quality in a window. Default 20.\n\
--l, --length-threshold, Threshold to keep a read based on length after trimming. Default 20.\n\
--x, --no-fiveprime, Don't do five prime trimming.\n\
--n, --truncate-n, Truncate sequences at position of first N.\n");
+    fprintf(stderr, "-s, --output-single, Output trimmed singles fastq file\n"
+"-q, --qual-threshold, Threshold for trimming based on average quality in a window. Default 20.\n"
+"-l, --length-threshold, Threshold to keep a read based on length after trimming. Default 20.\n"
+"-x, --no-fiveprime, Don't do five prime trimming.\n"
+"-n, --truncate-n, Truncate sequences at position of first N.\n"
+"-a, --polyA-trimming, Turn on Poly A/T trimming\n"
+"-E, --polyA-error, Maximum amount of errors allowed in Poly-A or Poly-T tail in when trimming. Default 3\n");
 
 
-    fprintf(stderr, "-g, --gzip-output, Output gzipped files.\n--quiet, do not output trimming info\n\
+    fprintf(stderr, 
+"-A, --polyA-min, Minimum length of Poly-A or Poly-T tail to trim. Default 10\n"
+"-g, --gzip-output, Output gzipped files.\n--quiet, do not output trimming info\n\
 --help, display this help and exit\n\
 --version, output version information and exit\n\n");
 
@@ -118,18 +129,45 @@ int paired_main(int argc, char *argv[]) {
     int combo_all=0;
     int combo_s=0;
     int total=0;
+    /*Poly AT trimming*/
+    int poly_trimming=0;
+    int cut_poly=0;
+    int r1_poly = 0;
+    int r2_poly = 0;
+    int r1_three_prime_removed = 0;
+    int r1_five_prime_removed = 0;
+    int r2_three_prime_removed = 0;
+    int r2_five_prime_removed = 0;
+    int r1_check = 0;
+    int r2_check = 0;
+    int polyA_error = 3;
+    int polyA_min = 10;
+    int tab = 0;
 
     while (1) {
         int option_index = 0;
-        optc = getopt_long(argc, argv, "df:r:c:t:o:p:m:M:s:q:l:xng", paired_long_options, &option_index);
+        optc = getopt_long(argc, argv, "adf:r:c:t:o:p:m:M:s:q:l:xngA:E:T", paired_long_options, &option_index);
 
         if (optc == -1)
             break;
-
         switch (optc) {
             if (paired_long_options[option_index].flag != 0)
                 break;
-
+	case 'a':
+	    poly_trimming = 1;
+	    break;
+	case 'A':
+	    polyA_min = atoi(optarg);
+	    if (polyA_min < 0) {
+		fprintf(stderr, "PolyA Min tail must be larger than 0");
+	    }
+	    break;
+	case 'E':
+	    polyA_error = atoi(optarg);
+	    if (polyA_error < 0) {
+		fprintf(stderr, "PolyA Min tail must be larger than 0");
+	    }
+	    break;
         case 'f':
             infn1 = (char *) malloc(strlen(optarg) + 1);
             strcpy(infn1, optarg);
@@ -154,7 +192,9 @@ int paired_main(int argc, char *argv[]) {
                 return EXIT_FAILURE;
             }
             break;
-
+	case 'T':
+	    tab = 1;		
+	    break;
         case 'o':
             outfn1 = (char *) malloc(strlen(optarg) + 1);
             strcpy(outfn1, optarg);
@@ -263,7 +303,11 @@ int paired_main(int argc, char *argv[]) {
 
         /* get combined output file */
         if (!gzip_output) {
-            combo = fopen(outfnc, "w");
+            if (strcmp(outfnc, "stdout") != 0) {
+		        combo = fopen(outfnc, "w");
+	        } else {
+		        combo = stdout;
+	        }
             if (!combo) {
                 fprintf(stderr, "****Error: Could not open combo output file '%s'.\n\n", outfnc);
                 return EXIT_FAILURE;
@@ -276,7 +320,8 @@ int paired_main(int argc, char *argv[]) {
             }
         }
 
-        pec = gzopen(infnc, "r");
+       	 	pec = gzopen(infnc, "r");
+
         if (!pec) {
             fprintf(stderr, "****Error: Could not open combined input file '%s'.\n\n", infnc);
             return EXIT_FAILURE;
@@ -300,13 +345,15 @@ int paired_main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
 
-        pe1 = gzopen(infn1, "r");
-        if (!pe1) {
+	pe1 = gzopen(infn1, "r");
+       
+	 if (!pe1) {
             fprintf(stderr, "****Error: Could not open input file '%s'.\n\n", infn1);
             return EXIT_FAILURE;
         }
 
-        pe2 = gzopen(infn2, "r");
+	pe2 = gzopen(infn2, "r");
+
         if (!pe2) {
             fprintf(stderr, "****Error: Could not open input file '%s'.\n\n", infn2);
             return EXIT_FAILURE;
@@ -366,6 +413,8 @@ int paired_main(int argc, char *argv[]) {
         fqrec2 = kseq_init(pe2);
     }
 
+    
+
     while ((l1 = kseq_read(fqrec1)) >= 0) {
 
         l2 = kseq_read(fqrec2);
@@ -374,9 +423,105 @@ int paired_main(int argc, char *argv[]) {
             break;
         }
 
-        p1cut = sliding_window(fqrec1, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n, debug);
+        
+	/*First we will trim poly-a tails if user imputs it*/
+
+	/*
+	int first3, first5, second3, second5;
+
+	p1cut = vectorized_sliding_window(fqrec1, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n, debug);
+        p2cut = vectorized_sliding_window(fqrec2, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n, debug);
+	first3 = p1cut->three_prime_cut;
+	first5 = p1cut->five_prime_cut;
+	second3 = p2cut->three_prime_cut;
+	second5 = p2cut->five_prime_cut;
+	*/	
+	p1cut = sliding_window(fqrec1, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n, debug);
         p2cut = sliding_window(fqrec2, qualtype, paired_length_threshold, paired_qual_threshold, no_fiveprime, trunc_n, debug);
-        total += 2;
+/*
+	printf("%d\t%d\n", first5, p1cut->five_prime_cut);
+	if (first5 == p1cut->five_prime_cut) {
+		printf("5 - good\n");
+	} else {
+		printf("5 - bad\n");
+	}
+
+	if (first3 == p1cut->three_prime_cut) {
+		printf("3 - good\n");
+	} else {
+		printf("3 - bad\n");
+	}
+*/
+
+	r1_check = 0;
+	r2_check = 0;
+
+	if (poly_trimming) {
+		/*fqrec1->seq.1*/	
+		cut_poly =  fqrec1->seq.l - trim_poly_a(fqrec1->seq.s, polyA_min, polyA_error, fqrec1->seq.l, 0) + 1;
+		p1cut->three_prime_cut = ((p1cut->three_prime_cut > cut_poly) ? cut_poly : p1cut->three_prime_cut);
+
+		if (cut_poly != fqrec1->seq.l + 1) {
+			r1_check = 1;
+			r1_poly++;
+		}
+		
+		cut_poly =  fqrec2->seq.l - trim_poly_a(fqrec2->seq.s, polyA_min, polyA_error, fqrec2->seq.l, 0) + 1;
+		p2cut->three_prime_cut = ((p2cut->three_prime_cut > cut_poly) ? cut_poly : p2cut->three_prime_cut);
+		
+		if (cut_poly != fqrec2->seq.l + 1) {
+			r2_check = 1;
+			r2_poly++;
+		}
+	
+
+		cut_poly = trim_poly_t(fqrec1->seq.s, polyA_min, polyA_error, 0, fqrec1->seq.l);
+		p1cut->five_prime_cut = ((p1cut->five_prime_cut < cut_poly) ? cut_poly : p1cut->five_prime_cut);
+
+		if (cut_poly != 0 && r1_check != 1) {
+			r1_check = 1;
+			r1_poly++;
+		}
+
+		cut_poly = trim_poly_t(fqrec2->seq.s, polyA_min, polyA_error, 0, fqrec2->seq.l);
+		p2cut->five_prime_cut = ((p2cut->five_prime_cut < cut_poly) ? cut_poly : p2cut->five_prime_cut);
+		
+		if (cut_poly != 0 && r2_check != 1) {
+			r2_check = 1;
+			r2_poly++;
+		}
+	
+
+	}
+        
+	if (p1cut->three_prime_cut - p1cut->five_prime_cut <= paired_length_threshold) {
+		p1cut->three_prime_cut = -1;
+		p1cut->five_prime_cut = -1;
+	}
+
+	if (p2cut->three_prime_cut - p2cut->five_prime_cut <= paired_length_threshold) {
+		p2cut->three_prime_cut = -1;
+		p2cut->five_prime_cut = -1;
+	}
+
+	if (p1cut->three_prime_cut > 0) {
+                r1_three_prime_removed += (fqrec1->seq.l - p1cut->three_prime_cut);
+        }
+
+        if (p1cut->five_prime_cut > 0) {
+                r1_five_prime_removed += p1cut->five_prime_cut;
+        }
+
+        if (p2cut->three_prime_cut > 0) {
+                r2_three_prime_removed += (fqrec2->seq.l - p1cut->three_prime_cut);
+        }
+
+        if (p2cut->five_prime_cut > 0) {
+                r2_five_prime_removed += p2cut->five_prime_cut;
+        }
+
+
+	total += 2;
 
         if (debug) printf("p1cut: %d,%d\n", p1cut->five_prime_cut, p1cut->three_prime_cut);
         if (debug) printf("p2cut: %d,%d\n", p2cut->five_prime_cut, p2cut->three_prime_cut);
@@ -388,7 +533,9 @@ int paired_main(int argc, char *argv[]) {
         /* if both sequences passed quality and length filters, then output both records */
         if (p1cut->three_prime_cut >= 0 && p2cut->three_prime_cut >= 0) {
             if (!gzip_output) {
-                if (pec) {
+		if (tab) {
+		    print_record_tab(combo, fqrec1, fqrec2, p1cut, p2cut);
+                } else if (pec) {
                     print_record (combo, fqrec1, p1cut);
                     print_record (combo, fqrec2, p2cut);
                 } else {
@@ -412,7 +559,9 @@ int paired_main(int argc, char *argv[]) {
         /* or put an "N" record in if that option was chosen. */
         else if (p1cut->three_prime_cut >= 0 && p2cut->three_prime_cut < 0) {
             if (!gzip_output) {
-                if (combo_all) {
+                if (tab) {
+                    print_record_tab_s (combo, fqrec1, p1cut);
+                } else if (combo_all) {
                     print_record (combo, fqrec1, p1cut);
                     print_record_N (combo, fqrec2, qualtype);
                 } else {
@@ -433,7 +582,9 @@ int paired_main(int argc, char *argv[]) {
 
         else if (p1cut->three_prime_cut < 0 && p2cut->three_prime_cut >= 0) {
             if (!gzip_output) {
-                if (combo_all) {
+                if (tab) {
+                    print_record_tab_s (combo, fqrec1, p1cut);
+                } else if (combo_all) {
                     print_record_N (combo, fqrec1, qualtype);
                     print_record (combo, fqrec2, p2cut);
                 } else {
@@ -480,17 +631,23 @@ int paired_main(int argc, char *argv[]) {
     }
 
     if (!quiet) {
-        if (infn1 && infn2) fprintf(stdout, "\nPE forward file: %s\nPE reverse file: %s\n", infn1, infn2);
-        if (infnc) fprintf(stdout, "\nPE interleaved file: %s\n", infnc);
-        fprintf(stdout, "\nTotal input FastQ records: %d (%d pairs)\n", total, (total / 2));
-        fprintf(stdout, "\nFastQ paired records kept: %d (%d pairs)\n", kept_p, (kept_p / 2));
-        if (pec) fprintf(stdout, "FastQ single records kept: %d\n", (kept_s1 + kept_s2));
-        else fprintf(stdout, "FastQ single records kept: %d (from PE1: %d, from PE2: %d)\n", (kept_s1 + kept_s2), kept_s1, kept_s2);
+        if (infn1 && infn2) fprintf(stderr, "PE forward file: %s\nPE reverse file: %s\n", infn1, infn2);
+        if (infnc) fprintf(stderr, "PE interleaved file: %s\n", infnc);
+        fprintf(stderr, "\nTotal input FastQ records: %d (%d pairs)\n", total, (total / 2));
+        fprintf(stderr, "\nFastQ paired records kept: %d (%d pairs)\n", kept_p, (kept_p / 2));
+        if (pec) fprintf(stderr, "FastQ single records kept: %d\n", (kept_s1 + kept_s2));
+        else fprintf(stderr, "FastQ single records kept: %d (from PE1: %d, from PE2: %d)\n", (kept_s1 + kept_s2), kept_s1, kept_s2);
 
-        fprintf(stdout, "FastQ paired records discarded: %d (%d pairs)\n", discard_p, (discard_p / 2));
+        fprintf(stderr, "FastQ paired records discarded: %d (%d pairs)\n", discard_p, (discard_p / 2));
 
-        if (pec) fprintf(stdout, "FastQ single records discarded: %d\n\n", (discard_s1 + discard_s2));
-        else fprintf(stdout, "FastQ single records discarded: %d (from PE1: %d, from PE2: %d)\n\n", (discard_s1 + discard_s2), discard_s1, discard_s2);
+        if (pec) fprintf(stderr, "FastQ single records discarded: %d\n\n", (discard_s1 + discard_s2));
+        else fprintf(stderr, "FastQ single records discarded: %d (from PE1: %d, from PE2: %d)\n\n", (discard_s1 + discard_s2), discard_s1, discard_s2);
+	if (poly_trimming) {
+		fprintf(stderr, "Poly AT tails PE1: %d\nPoly AT tails PE2: %d\n", r1_poly, r2_poly);
+	}
+
+	fprintf(stderr, "PE1 Base pairs left removed: %d\nPE1 Base pairs right removed: %d\nPE2 Base pairs left removed: %d\nPE2 Base pairs right removed: %d\n", r1_five_prime_removed, r1_three_prime_removed, r2_five_prime_removed, r2_three_prime_removed);
+
     }
 
     kseq_destroy(fqrec1);

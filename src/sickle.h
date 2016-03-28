@@ -97,5 +97,6 @@ typedef struct __cutsites_ {
 int single_main (int argc, char *argv[]);
 int paired_main (int argc, char *argv[]);
 cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int qual_threshold, int no_fiveprime, int trunc_n, int debug);
-
+int trim_poly_a(char* seq, int min_cutoff, int trim_errors, size_t start, size_t end);
+int trim_poly_t(char* seq, int min_cutoff, int trim_errors, size_t start, size_t end);
 #endif /*SICKLE_H*/
