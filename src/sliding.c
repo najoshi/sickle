@@ -90,7 +90,7 @@ cutsites* sliding_window (kseq_t *fqrec, int qualtype, int length_threshold, int
 		/* if the average quality in the window is less than the threshold */
 		/* or if the window is the last window in the read */
 		if ((window_avg < qual_threshold || 
-			window_start+window_size > fqrec->qual.l) && (found_five_prime == 1 || no_fiveprime)) {
+			window_start+window_size >= fqrec->qual.l) && (found_five_prime == 1 || no_fiveprime)) {
 
 			/* at what point in the window does the quality dip below the threshold? */
 			for (j=window_start; j<window_start+window_size; j++) {
